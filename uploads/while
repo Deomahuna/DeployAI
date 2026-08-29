@@ -1,0 +1,30 @@
+number = 23
+running = True
+
+while running :
+    guess = int(input('Entrer un entier :'))
+
+    if guess ==  number :
+     print('Tu as déviné le nombre juste')
+
+     running = False
+
+    elif guess < number: 
+
+        print('Sa te reste un peu à ajouter pour déviner')
+
+    else:
+       print('ton entier est trop grand pour déviner la valeur juste')
+    
+else:
+
+    print('Done')
+
+
+
+
+
+
+
+    
+

@@ -1,0 +1,9 @@
+# DeployAI - fichier de test
+
+Nom du projet : Test DeployAI
+Langage : Python
+Framework : FastAPI
+Version : 1.0
+
+Ceci est un fichier utilisé pour tester
+la fonctionnalité d'importation de DeployAI.

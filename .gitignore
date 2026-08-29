@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Environnement / Secrets
+.env
+
+# Uploads et données locales
+uploads/
+*.db
+*.sqlite3
