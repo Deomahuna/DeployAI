@@ -14,7 +14,7 @@
 import { useState } from "react";
 
 // Fonction qui communique avec le backend FastAPI
-import { importApplication } from "../services/importService";
+import { importApplication } from "../../services/importService";
 
 
 // =====================================================

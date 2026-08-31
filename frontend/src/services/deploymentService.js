@@ -2,63 +2,20 @@
 // Service de communication avec l'API des déploiements
 // =====================================================
 
-const API_URL = "http://127.0.0.1:8000";
-
-
-// =====================================================
-// Récupérer tous les déploiements
-// =====================================================
+import { apiFetch } from "./api.js";
 
 export async function getDeployments() {
-
-    const response = await fetch(`${API_URL}/deployments/`);
-
-    if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des déploiements");
-    }
-
-    return await response.json();
+    return apiFetch("/deployments/");
 }
-
-
-// =====================================================
-// Créer / lancer un déploiement
-// =====================================================
 
 export async function createDeployment(deployment) {
-
-    const response = await fetch(`${API_URL}/deployments/`, {
-
+    return apiFetch("/deployments/", {
         method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(deployment)
     });
-
-    if (!response.ok) {
-        throw new Error("Erreur lors du lancement du déploiement");
-    }
-
-    return await response.json();
 }
 
-
-// =====================================================
-// Récupérer un déploiement
-// =====================================================
-
 export async function getDeployment(deploymentId) {
-
-    const response = await fetch(
-        `${API_URL}/deployments/${deploymentId}`
-    );
-
-    if (!response.ok) {
-        throw new Error("Déploiement introuvable");
-    }
-
-    return await response.json();
+    return apiFetch(`/deployments/${deploymentId}`);
 }

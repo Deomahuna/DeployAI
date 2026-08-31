@@ -1,84 +1,35 @@
-import {
-    BrowserRouter,
-    Routes,
-    Route,
-    Link
-} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
-import Dashboard from "./pages/Dashboard";
-import Projects from "./pages/Projects";
-import ImportRepository from "./pages/ImportRepository";
-import Deployments from "./pages/Deployments";
-import Diagnostics from "./pages/Diagnostics";
+import Home from "./pages/Home/Home.jsx";
+import Login from "./pages/Login/Login.jsx";
+import Register from "./pages/Register/Register.jsx";
 
+import MainLayout from "./layouts/MainLayout/MainLayout.jsx";
+
+import Dashboard from "./pages/Dashboard/Dashboard.jsx";
+import Projects from "./pages/Projects/Projects.jsx";
+import ImportRepository from "./pages/ImportRepository/ImportRepository.jsx";
+import Deployments from "./pages/Deployments/Deployments.jsx";
+import Diagnostics from "./pages/Diagnostics/Diagnostics.jsx";
 
 function App() {
     return (
-        <BrowserRouter>
+        <Routes>
 
-            <div style={{ padding: "20px" }}>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-                <h1>🚀 DeployAI</h1>
+            <Route element={<MainLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/import" element={<ImportRepository />} />
+                <Route path="/deployments" element={<Deployments />} />
+                <Route path="/diagnostics" element={<Diagnostics />} />
+            </Route>
 
-                <nav style={{ marginBottom: "30px" }}>
-
-                    <Link to="/" style={{ marginRight: "20px" }}>
-                        📊 Dashboard
-                    </Link>
-
-                    <Link to="/projects" style={{ marginRight: "20px" }}>
-                        📁 Projets
-                    </Link>
-
-                    <Link to="/import" style={{ marginRight: "20px" }}>
-                        📥 Importer
-                    </Link>
-
-                    <Link to="/deployments" style={{ marginRight: "20px" }}>
-                        🚀 Déploiements
-                    </Link>
-
-                    <Link to="/diagnostics">
-                        🤖 Diagnostics
-                    </Link>
-
-                </nav>
-
-
-                <Routes>
-
-                    <Route
-                        path="/"
-                        element={<Dashboard />}
-                    />
-
-                    <Route
-                        path="/projects"
-                        element={<Projects />}
-                    />
-
-                    <Route
-                        path="/import"
-                        element={<ImportRepository />}
-                    />
-
-                    <Route
-                        path="/deployments"
-                        element={<Deployments />}
-                    />
-
-                    <Route
-                        path="/diagnostics"
-                        element={<Diagnostics />}
-                    />
-
-                </Routes>
-
-            </div>
-
-        </BrowserRouter>
+        </Routes>
     );
 }
-
 
 export default App;

@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import {
     getDeployments,
     createDeployment
-} from "../services/deploymentService";
+} from "../../services/deploymentService";
 
-import { getProjects } from "../services/projectService";
+import { getProjects } from "../../services/projectService";
 
 
 function Deployments() {

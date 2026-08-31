@@ -9,7 +9,7 @@ import {
     getProjects,
     updateProject,
     deleteProject
-} from "../services/projectService";
+} from "../../services/projectService";
 
 
 function Projects() {

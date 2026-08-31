@@ -2,125 +2,30 @@
 // Service de communication avec l'API des projets
 // =====================================================
 
-const API_URL = "http://127.0.0.1:8000";
-
-
-// =====================================================
-// Créer un projet
-// =====================================================
+import { apiFetch } from "./api.js";
 
 export async function createProject(project) {
-
-    const response = await fetch(`${API_URL}/projects/`, {
-
+    return apiFetch("/projects/", {
         method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(project)
-
     });
-
-    if (!response.ok) {
-
-        const errorText = await response.text();
-
-        throw new Error(
-            `Erreur lors de la création du projet : ${errorText}`
-        );
-
-    }
-
-    return await response.json();
 }
-
-
-// =====================================================
-// Récupérer tous les projets
-// =====================================================
 
 export async function getProjects() {
-
-    const response = await fetch(
-        `${API_URL}/projects/`
-    );
-
-    if (!response.ok) {
-
-        const errorText = await response.text();
-
-        throw new Error(
-            `Erreur lors de la récupération des projets : ${errorText}`
-        );
-
-    }
-
-    return await response.json();
+    return apiFetch("/projects/");
 }
 
-
-// =====================================================
-// Modifier un projet
-// =====================================================
-
-export async function updateProject(
-    projectId,
-    project
-) {
-
-    const response = await fetch(
-        `${API_URL}/projects/${projectId}`,
-        {
-
-            method: "PUT",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify(project)
-
-        }
-    );
-
-    if (!response.ok) {
-
-        const errorText = await response.text();
-
-        throw new Error(
-            `Erreur lors de la modification du projet : ${errorText}`
-        );
-
-    }
-
-    return await response.json();
+export async function updateProject(projectId, project) {
+    return apiFetch(`/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(project)
+    });
 }
-
-
-// =====================================================
-// Supprimer un projet
-// =====================================================
 
 export async function deleteProject(projectId) {
-
-    const response = await fetch(
-        `${API_URL}/projects/${projectId}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-
-        const errorText = await response.text();
-
-        throw new Error(
-            `Erreur lors de la suppression du projet : ${errorText}`
-        );
-
-    }
-
-    return await response.json();
+    return apiFetch(`/projects/${projectId}`, {
+        method: "DELETE"
+    });
 }
