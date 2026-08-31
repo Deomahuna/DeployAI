@@ -1,0 +1,20 @@
+# Environnements virtuels
+venv/
+.venv/
+env/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Variables d'environnement / secrets
+.env
+
+# Fichiers uploadés / données locales
+uploads/
+
+# Bases de données locales (si SQLite utilisé en test)
+*.db
+*.sqlite3
