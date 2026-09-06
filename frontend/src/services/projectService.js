@@ -1,31 +1,42 @@
-// =====================================================
-// Service de communication avec l'API des projets
-// =====================================================
+import apiFetch from "./api";
 
-import { apiFetch } from "./api.js";
-
-export async function createProject(project) {
-    return apiFetch("/projects/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(project)
-    });
+export function listProjects() {
+  return apiFetch("/projects");
 }
 
-export async function getProjects() {
-    return apiFetch("/projects/");
+export function getProject(id) {
+  return apiFetch(`/projects/${id}`);
 }
 
-export async function updateProject(projectId, project) {
-    return apiFetch(`/projects/${projectId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(project)
-    });
+export function importProject(payload) {
+  return apiFetch("/projects/import", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
-export async function deleteProject(projectId) {
-    return apiFetch(`/projects/${projectId}`, {
-        method: "DELETE"
-    });
+export function deployProject(id) {
+  return apiFetch(`/projects/${id}/deploy`, { method: "POST" });
+}
+
+export function deleteProject(id) {
+  return apiFetch(`/projects/${id}`, { method: "DELETE" });
+}
+
+export function addEnvVar(projectId, key, value, isSecret = true) {
+  return apiFetch(`/projects/${projectId}/env`, {
+    method: "POST",
+    body: JSON.stringify({ key, value, is_secret: isSecret }),
+  });
+}
+
+export function removeEnvVar(projectId, key) {
+  return apiFetch(`/projects/${projectId}/env/${key}`, { method: "DELETE" });
+}
+
+export function analyzeRepo(repoUrl) {
+  return apiFetch("/projects/analyze", {
+    method: "POST",
+    body: JSON.stringify({ repo_url: repoUrl }),
+  });
 }

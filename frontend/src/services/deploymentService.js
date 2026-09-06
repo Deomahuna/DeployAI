@@ -1,21 +1,14 @@
-// =====================================================
-// Service de communication avec l'API des déploiements
-// =====================================================
+import apiFetch from "./api";
 
-import { apiFetch } from "./api.js";
-
-export async function getDeployments() {
-    return apiFetch("/deployments/");
+export function listDeployments(projectId = null) {
+  const query = projectId ? `?project_id=${projectId}` : "";
+  return apiFetch(`/deployments${query}`);
 }
 
-export async function createDeployment(deployment) {
-    return apiFetch("/deployments/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(deployment)
-    });
+export function getDiagnosis(deploymentId) {
+  return apiFetch(`/deployments/${deploymentId}/diagnosis`);
 }
 
-export async function getDeployment(deploymentId) {
-    return apiFetch(`/deployments/${deploymentId}`);
+export function resolveDiagnostic(deploymentId) {
+  return apiFetch(`/diagnostics/${deploymentId}/resolve`, { method: "POST" });
 }

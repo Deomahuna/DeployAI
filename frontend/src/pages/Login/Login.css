@@ -1,78 +1,175 @@
-.auth-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100svh;
-    padding: 24px;
-    box-sizing: border-box;
+.login {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
 }
 
-.auth-card {
-    width: 100%;
-    max-width: 380px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 32px;
-    background: var(--code-bg);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--text-h);
+  text-decoration: none;
+  margin-bottom: 28px;
 }
 
-.auth-card h1 {
-    font-size: 24px;
-    text-align: center;
-    margin: 0 0 8px;
-    color: var(--text-h);
+.login-logo svg {
+  color: var(--accent);
 }
 
-.auth-card label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--text);
-    text-align: left;
+.login-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px;
+  width: 340px;
+  box-shadow: var(--shadow);
 }
 
-.auth-card input {
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text-h);
-    font-size: 15px;
+.login-title {
+  font-family: var(--heading);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0 0 4px;
 }
 
-.auth-card input:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
+.login-subtitle {
+  font-size: 13px;
+  color: var(--text);
+  margin: 0 0 22px;
 }
 
-.auth-submit {
-    margin-top: 8px;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: filter 0.15s ease;
+.login-card label {
+  font-size: 13px;
+  color: var(--text-h);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
 }
 
-.auth-submit:hover {
-    filter: brightness(1.08);
+.login-card input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  background: var(--code-bg);
+  font-size: 14px;
+  color: var(--text-h);
+  font-family: var(--sans);
+  box-sizing: border-box;
 }
 
-.auth-switch {
-    text-align: center;
-    font-size: 14px;
-    color: var(--text);
-    margin: 0;
+.login-card input:focus {
+  outline: none;
+  border-color: var(--accent-border);
 }
 
-.auth-switch a {
-    color: var(--accent);
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 38px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.login-forgot {
+  text-align: right;
+  margin: -8px 0 20px;
+}
+
+.login-forgot a {
+  font-size: 12.5px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: var(--sans);
+}
+
+.btn-block {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  opacity: 0.92;
+}
+
+.btn-outline {
+  background: var(--bg);
+  color: var(--text-h);
+  border-color: var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--code-bg);
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.login-divider span {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-divider p {
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+}
+
+.login-register {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+  margin: 20px 0 0;
+}
+
+.login-register a {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
 }

@@ -1,0 +1,374 @@
+.diagnostics {
+  color: var(--text);
+}
+
+.diagnostics-header {
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.diagnostics-title {
+  font-family: var(--heading);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.diagnostics-subtitle {
+  font-size: 12.5px;
+  color: var(--text);
+  margin: 2px 0 0;
+}
+
+.diagnostics-body {
+  padding: 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 720px;
+}
+
+.diagnostics-empty {
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+  padding: 30px 0;
+}
+
+/* --- Diagnosis card --- */
+.diagnosis-card {
+  background: var(--bg);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.diagnosis-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.diagnosis-card-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.diagnosis-card-label svg {
+  color: var(--accent-ai);
+}
+
+.diagnosis-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.tag-severity {
+  font-size: 11.5px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.severity-high {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--error);
+}
+
+.severity-medium {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.severity-low {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--success);
+}
+
+.tag-confidence {
+  font-size: 11.5px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-weight: 500;
+  background: var(--accent-ai-bg);
+  color: var(--accent-ai);
+}
+
+.error-block {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--error);
+  margin-bottom: 16px;
+}
+
+.section-label {
+  font-size: 12.5px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+
+.cause-text {
+  font-size: 13.5px;
+  color: var(--text-h);
+  margin: 0 0 18px;
+  line-height: 1.6;
+}
+
+.solutions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.solution-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.solution-title {
+  font-size: 13px;
+  color: var(--text-h);
+  margin: 0;
+  font-weight: 500;
+}
+
+.solution-command {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  margin: 4px 0 0;
+}
+
+.solution-note {
+  font-size: 12px;
+  color: var(--text);
+  margin: 4px 0 0;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  padding: 2px;
+}
+
+.copy-btn:hover {
+  color: var(--accent);
+}
+
+.diagnosis-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+.diagnosis-actions .btn-accent {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+}
+
+.diagnosis-actions .btn-accent:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.diagnosis-actions .btn-accent:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.diagnosis-actions .btn-outline {
+  background: var(--bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+}
+
+.diagnosis-actions .btn-outline:hover {
+  background: var(--code-bg);
+}
+
+/* --- Resolved banner --- */
+.resolved-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  color: var(--success);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  margin-left: auto;
+}
+
+/* --- Timeline --- */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.timeline-step {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.timeline-step:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 14px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--border);
+}
+
+.timeline-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.step-done .timeline-dot {
+  background: var(--accent);
+}
+
+.step-success .timeline-dot {
+  background: var(--success);
+}
+
+.step-error .timeline-dot {
+  background: var(--error);
+}
+
+.step-pending .timeline-dot {
+  background: var(--border);
+  border: 2px solid var(--text);
+  width: 7px;
+  height: 7px;
+}
+
+.timeline-label {
+  font-size: 13px;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.step-pending .timeline-label {
+  color: var(--text);
+}
+
+.timeline-time {
+  font-size: 11.5px;
+  color: var(--text);
+  margin: 2px 0 0;
+}
+
+/* --- History --- */
+.section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0 0 10px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-row {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.history-row:hover {
+  border-color: var(--accent-border);
+}
+
+.history-project {
+  font-size: 13px;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.history-summary {
+  font-size: 12px;
+  color: var(--text);
+  margin-left: 8px;
+}
+
+.history-status {
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.history-status.resolved {
+  color: var(--success);
+}
+
+@media (max-width: 640px) {
+  .diagnosis-actions {
+    flex-direction: column;
+  }
+}

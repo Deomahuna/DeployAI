@@ -1,32 +1,27 @@
-// =====================================================
-// Configuration centrale des appels à l'API DeployAI
-// =====================================================
+const API_URL = import.meta.env.VITE_API_URL;
 
-export const API_URL = import.meta.env.VITE_API_URL;
-
-// Wrapper générique autour de fetch : centralise la
-// vérification du statut et l'extraction des erreurs,
-// pour éviter de répéter ce bloc dans chaque service.
-export async function apiFetch(path, options = {}) {
-
-    const response = await fetch(`${API_URL}${path}`, options);
-
-    if (!response.ok) {
-
-        const errorText = await response.text();
-
-        throw new Error(
-            errorText || `Erreur API (${response.status}) sur ${path}`
-        );
-
-    }
-
-    // Certaines routes (ex: DELETE) ne renvoient pas toujours du JSON
-    const contentType = response.headers.get("content-type");
-
-    if (contentType && contentType.includes("application/json")) {
-        return await response.json();
-    }
-
-    return null;
+function getToken() {
+  return localStorage.getItem("access_token");
 }
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erreur inconnue" }));
+    throw new Error(error.error || "Erreur API");
+  }
+
+  return response.status !== 204 ? response.json() : null;
+}
+
+export default apiFetch;
+export { API_URL, getToken };

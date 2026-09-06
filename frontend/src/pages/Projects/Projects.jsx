@@ -1,549 +1,240 @@
-// =====================================================
-// Gestion des projets DeployAI
-// =====================================================
-
-import { useEffect, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    createProject,
-    getProjects,
-    updateProject,
-    deleteProject
-} from "../../services/projectService";
-
-
-function Projects() {
-
-    // =====================================================
-    // État du formulaire
-    // =====================================================
-
-    const [projet, setProjet] = useState({
-        nom_projet: "",
-        langage: "",
-        framework: "",
-        description: "",
-        github_url: "",
-        version: "",
-        statut: "En attente",
-        user_id: 1
-    });
-
-
-    // =====================================================
-    // Liste des projets
-    // =====================================================
-
-    const [projets, setProjets] = useState([]);
-
-
-    // =====================================================
-    // Projet en cours de modification
-    // =====================================================
-
-    const [projetEnModification, setProjetEnModification] =
-        useState(null);
-
-
-    // =====================================================
-    // Charger les projets
-    // =====================================================
-
-    const chargerProjets = async () => {
-
-        try {
-
-            const donnees = await getProjects();
-
-            setProjets(donnees);
-
-        } catch (error) {
-
-            console.error(
-                "Erreur lors du chargement des projets :",
-                error
-            );
-        }
-    };
-
-
-    // =====================================================
-    // Charger les projets au démarrage
-    // =====================================================
-
-    useEffect(() => {
-
-        chargerProjets();
-
-    }, []);
-
-
-    // =====================================================
-    // Modifier les champs du formulaire
-    // =====================================================
-
-    const handleChange = (event) => {
-
-        const { name, value } = event.target;
-
-        setProjet({
-            ...projet,
-            [name]: value
-        });
-    };
-
-
-    // =====================================================
-    // Créer ou modifier un projet
-    // =====================================================
-
-    const handleSubmit = async (event) => {
-
-        event.preventDefault();
-
-        try {
-
-            // Modification
-            if (projetEnModification !== null) {
-
-                const projetModifie = await updateProject(
-                    projetEnModification,
-                    projet
-                );
-
-                console.log(
-                    "Projet modifié :",
-                    projetModifie
-                );
-
-                alert("Projet modifié avec succès !");
-
-            }
-
-            // Création
-            else {
-
-                const nouveauProjet =
-                    await createProject(projet);
-
-                console.log(
-                    "Projet créé :",
-                    nouveauProjet
-                );
-
-                alert("Projet créé avec succès !");
-            }
-
-
-            // Réinitialiser le formulaire
-            setProjet({
-                nom_projet: "",
-                langage: "",
-                framework: "",
-                description: "",
-                github_url: "",
-                version: "",
-                statut: "En attente",
-                user_id: 1
-            });
-
-
-            // Quitter le mode modification
-            setProjetEnModification(null);
-
-
-            // Recharger la liste
-            chargerProjets();
-
-        } catch (error) {
-
-            console.error(
-                "Erreur :",
-                error
-            );
-
-            alert(
-                "Impossible d'enregistrer le projet."
-            );
-        }
-    };
-
-
-    // =====================================================
-    // Préparer la modification
-    // =====================================================
-
-    const handleEdit = (projetSelectionne) => {
-
-        setProjetEnModification(
-            projetSelectionne.id
-        );
-
-        setProjet({
-            nom_projet:
-                projetSelectionne.nom_projet,
-
-            langage:
-                projetSelectionne.langage,
-
-            framework:
-                projetSelectionne.framework,
-
-            description:
-                projetSelectionne.description,
-
-            github_url:
-                projetSelectionne.github_url || "",
-
-            version:
-                projetSelectionne.version,
-
-            statut:
-                projetSelectionne.statut,
-
-            user_id:
-                projetSelectionne.user_id
-        });
-    };
-
-
-    // =====================================================
-    // Annuler la modification
-    // =====================================================
-
-    const handleCancelEdit = () => {
-
-        setProjetEnModification(null);
-
-        setProjet({
-            nom_projet: "",
-            langage: "",
-            framework: "",
-            description: "",
-            github_url: "",
-            version: "",
-            statut: "En attente",
-            user_id: 1
-        });
-    };
-
-
-    // =====================================================
-    // Supprimer un projet
-    // =====================================================
-
-    const handleDelete = async (projectId) => {
-
-        const confirmation = window.confirm(
-            "Voulez-vous vraiment supprimer ce projet ?"
-        );
-
-        if (!confirmation) {
-            return;
-        }
-
-        try {
-
-            await deleteProject(projectId);
-
-            alert(
-                "Projet supprimé avec succès !"
-            );
-
-            // Recharger la liste
-            chargerProjets();
-
-        } catch (error) {
-
-            console.error(
-                "Erreur lors de la suppression :",
-                error
-            );
-
-            alert(
-                "Impossible de supprimer le projet."
-            );
-        }
-    };
-
-
-    // =====================================================
-    // Interface
-    // =====================================================
-
-    return (
-        <div>
-
-            <h1>Gestion des projets</h1>
-
-
-            {/* =================================================
-                Formulaire
-            ================================================= */}
-
-            <h2>
-                {projetEnModification !== null
-                    ? "Modifier le projet"
-                    : "Créer un projet"}
-            </h2>
-
-
-            <form onSubmit={handleSubmit}>
-
-                {/* Nom du projet */}
-
-                <label>
-                    Nom du projet
-                </label>
-
-                <input
-                    type="text"
-                    name="nom_projet"
-                    value={projet.nom_projet}
-                    onChange={handleChange}
-                    placeholder="Nom du projet"
-                    required
-                />
-
-
-                {/* Langage */}
-
-                <label>
-                    Langage
-                </label>
-
-                <input
-                    type="text"
-                    name="langage"
-                    value={projet.langage}
-                    onChange={handleChange}
-                    placeholder="Ex : Python"
-                    required
-                />
-
-
-                {/* Framework */}
-
-                <label>
-                    Framework
-                </label>
-
-                <input
-                    type="text"
-                    name="framework"
-                    value={projet.framework}
-                    onChange={handleChange}
-                    placeholder="Ex : FastAPI"
-                    required
-                />
-
-
-                {/* GitHub */}
-
-                <label>
-                    GitHub URL
-                </label>
-
-                <input
-                    type="text"
-                    name="github_url"
-                    value={projet.github_url}
-                    onChange={handleChange}
-                    placeholder="Ex : https://github.com/utilisateur/projet"
-                    required
-                />
-
-
-                {/* Description */}
-
-                <label>
-                    Description
-                </label>
-
-                <textarea
-                    name="description"
-                    value={projet.description}
-                    onChange={handleChange}
-                    placeholder="Description du projet"
-                    required
-                />
-
-
-                {/* Version */}
-
-                <label>
-                    Version
-                </label>
-
-                <input
-                    type="text"
-                    name="version"
-                    value={projet.version}
-                    onChange={handleChange}
-                    placeholder="Ex : 1.0"
-                    required
-                />
-
-
-                {/* Statut */}
-
-                <label>
-                    Statut
-                </label>
-
-                <select
-                    name="statut"
-                    value={projet.statut}
-                    onChange={handleChange}
-                >
-
-                    <option value="En attente">
-                        En attente
-                    </option>
-
-                    <option value="Developpement">
-                        Developpement
-                    </option>
-
-                    <option value="Terminé">
-                        Terminé
-                    </option>
-
-                </select>
-
-
-                {/* Bouton principal */}
-
-                <button type="submit">
-
-                    {projetEnModification !== null
-                        ? "Modifier le projet"
-                        : "Créer le projet"}
-
-                </button>
-
-
-                {/* Bouton annuler */}
-
-                {projetEnModification !== null && (
-
-                    <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                    >
-                        Annuler
-                    </button>
-
-                )}
-
-            </form>
-
-
-            {/* =================================================
-                Liste des projets
-            ================================================= */}
-
-            <h2>
-                Mes projets
-            </h2>
-
-
-            {projets.length === 0 ? (
-
-                <p>
-                    Aucun projet enregistré.
-                </p>
-
-            ) : (
-
-                projets.map((projet) => (
-
-                    <div key={projet.id}>
-
-                        <h3>
-                            {projet.nom_projet}
-                        </h3>
-
-
-                        <p>
-                            <strong>Langage :</strong>{" "}
-                            {projet.langage}
-                        </p>
-
-
-                        <p>
-                            <strong>Framework :</strong>{" "}
-                            {projet.framework}
-                        </p>
-
-
-                        <p>
-                            <strong>Version :</strong>{" "}
-                            {projet.version}
-                        </p>
-
-
-                        <p>
-                            <strong>Statut :</strong>{" "}
-                            {projet.statut}
-                        </p>
-
-
-                        <p>
-                            <strong>Description :</strong>{" "}
-                            {projet.description}
-                        </p>
-
-
-                        <p>
-                            <strong>GitHub :</strong>{" "}
-
-                            {projet.github_url
-                                ? projet.github_url
-                                : "Non renseigné"}
-
-                        </p>
-
-
-                        {/* ================================
-                            Bouton Modifier
-                        ================================= */}
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleEdit(projet)
-                            }
-                        >
-                            Modifier
-                        </button>
-
-
-                        {/* ================================
-                            Bouton Supprimer
-                        ================================= */}
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleDelete(projet.id)
-                            }
-                        >
-                            Supprimer
-                        </button>
-
-
-                        <hr />
-
-                    </div>
-
-                ))
-
-            )}
-
-        </div>
-    );
+  FiPlus,
+  FiSearch,
+  FiChevronDown,
+  FiMoreHorizontal,
+  FiCpu,
+  FiPlusCircle,
+  FiEye,
+  FiRefreshCw,
+  FiFileText,
+  FiTrash2,
+} from "react-icons/fi";
+import { listProjects, deployProject, deleteProject } from "../../services/projectService.js";
+import { getStatusLabel } from "../../constants/status.js";
+import { useToast } from "../../context/ToastContext.jsx";
+import "./Projects.css";
+
+const statusOptions = [
+  { value: "all", label: "Tous les statuts" },
+  { value: "running", label: "En cours" },
+  { value: "success", label: "En ligne" },
+  { value: "failed", label: "Échec" },
+];
+
+function ProjectMenu({ project, onAction, onClose }) {
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div className="project-menu" ref={menuRef}>
+      <button onClick={() => onAction(project, "view")}>
+        <FiEye size={14} /> Voir les détails
+      </button>
+      <button onClick={() => onAction(project, "redeploy")}>
+        <FiRefreshCw size={14} /> Redéployer
+      </button>
+      <button onClick={() => onAction(project, "logs")}>
+        <FiFileText size={14} /> Voir les logs
+      </button>
+      <button className="danger" onClick={() => onAction(project, "delete")}>
+        <FiTrash2 size={14} /> Supprimer
+      </button>
+    </div>
+  );
 }
 
+function Projects() {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [openMenuFor, setOpenMenuFor] = useState(null);
+
+  useEffect(() => {
+    listProjects()
+      .then(setProjects)
+      .catch((err) => toast.error(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = projects.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleAction = async (project, action) => {
+    setOpenMenuFor(null);
+    switch (action) {
+      case "view":
+        navigate(`/projects/${project.id}`);
+        break;
+
+      case "redeploy":
+        try {
+          await deployProject(project.id);
+          toast.success(`Déploiement lancé pour ${project.name}.`);
+          navigate(`/deployments?project=${project.id}`);
+        } catch (err) {
+          toast.error(err.message);
+        }
+        break;
+
+      case "logs":
+        navigate(`/deployments?project=${project.id}`);
+        break;
+
+      case "delete":
+        if (!window.confirm(`Supprimer définitivement "${project.name}" ?`)) return;
+        try {
+          await deleteProject(project.id);
+          setProjects((prev) => prev.filter((p) => p.id !== project.id));
+          toast.success(`${project.name} supprimé.`);
+        } catch (err) {
+          toast.error(err.message);
+        }
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="projects">
+        <p>Chargement...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="projects">
+      <header className="projects-header">
+        <div>
+          <p className="projects-title">Projets</p>
+          <p className="projects-subtitle">{projects.length} projets connectés</p>
+        </div>
+        <button className="btn btn-accent" onClick={() => navigate("/import")}>
+          <FiPlus size={15} />
+          Nouveau projet
+        </button>
+      </header>
+
+      <div className="projects-toolbar">
+        <div className="search-field">
+          <FiSearch size={15} />
+          <input
+            type="text"
+            placeholder="Rechercher un projet..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="status-filter">
+          <button
+            className="status-filter-trigger"
+            onClick={() => setStatusDropdownOpen((v) => !v)}
+          >
+            {statusOptions.find((o) => o.value === statusFilter).label}
+            <FiChevronDown size={14} />
+          </button>
+          {statusDropdownOpen && (
+            <div className="status-filter-menu">
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  className={opt.value === statusFilter ? "active" : ""}
+                  onClick={() => {
+                    setStatusFilter(opt.value);
+                    setStatusDropdownOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="projects-grid">
+        {filtered.map((project) => (
+          <div key={project.id} className={`project-card status-${project.status}`}>
+            <div className="project-card-top">
+              <div className="project-card-identity">
+                <div className={`project-icon icon-${project.status}`}>
+                  {(project.language || "??").slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="project-name">{project.name}</p>
+                  <p className="project-repo">{project.repo_url}</p>
+                </div>
+              </div>
+              <span className={`badge badge-${project.status}`}>{getStatusLabel(project.status)}</span>
+            </div>
+
+            <div className="project-tags">
+              {project.language && <span className="tag">{project.language}</span>}
+              {project.framework && <span className="tag">{project.framework}</span>}
+            </div>
+
+            <div className="project-card-bottom">
+              {project.status === "failed" ? (
+                <span className="project-event event-failed">
+                  <FiCpu size={13} /> Diagnostic IA prêt
+                </span>
+              ) : (
+                <span className="project-event">
+                  Créé le {new Date(project.created_at).toLocaleDateString()}
+                </span>
+              )}
+
+              <div className="project-menu-wrap">
+                <button
+                  className="icon-btn"
+                  onClick={() =>
+                    setOpenMenuFor(openMenuFor === project.id ? null : project.id)
+                  }
+                  aria-label="Actions du projet"
+                >
+                  <FiMoreHorizontal size={16} />
+                </button>
+                {openMenuFor === project.id && (
+                  <ProjectMenu
+                    project={project}
+                    onAction={handleAction}
+                    onClose={() => setOpenMenuFor(null)}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <button className="project-card-new" onClick={() => navigate("/import")}>
+          <FiPlusCircle size={26} />
+          <span>Connecter un nouveau dépôt</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default Projects;

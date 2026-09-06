@@ -1,81 +1,24 @@
-body {
-  margin: 0;
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* =====================================================
+   À AJOUTER en haut de ton index.css (ou App.css),
+   avant tout le reste.
+   ===================================================== */
 
-@media (max-width: 1024px) {
-  body {
-    font-size: 16px;
-  }
-}
-
-[data-theme='dark'] #social .button-icon {
-  filter: invert(1) brightness(2);
-}
-
+html,
+body,
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-}
-@media (max-width: 1024px) {
-  h1 {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-}
-@media (max-width: 1024px) {
-  h2 {
-    font-size: 20px;
-  }
-}
-p {
+  height: 100%;
   margin: 0;
+  padding: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+/* Ne PAS mettre overflow: hidden sur body — ça casserait le scroll
+   normal des pages Home / Login / Register / ForgotPassword, qui
+   ne sont pas dans MainLayout et doivent pouvoir scroller
+   naturellement si leur contenu dépasse 100vh.
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+   Le double scroll venait juste de l'absence de height: 100% ici :
+   sans elle, .main-layout (height: 100vh) débordait légèrement du
+   body (qui n'avait pas de hauteur définie), créant une deuxième
+   barre de scroll. Avec height: 100% partout, .main-layout tient
+   exactement dans le viewport, et seuls .sidebar et .main-content
+   scrollent en interne (déjà réglé dans MainLayout.css). */

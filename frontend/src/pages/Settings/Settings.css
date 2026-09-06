@@ -1,0 +1,276 @@
+.settings-page {
+  display: flex;
+  color: var(--text);
+  min-height: 100%;
+}
+
+/* --- Sub-navigation --- */
+.settings-nav {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+}
+
+.settings-nav-title {
+  font-size: 12px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 10px;
+  padding: 0 8px;
+}
+
+.settings-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13.5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.settings-nav-link:hover {
+  background: var(--code-bg);
+}
+
+.settings-nav-link.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* --- Content --- */
+.settings-content {
+  flex: 1;
+  padding: 24px 32px;
+  max-width: 480px;
+}
+
+.settings-title {
+  font-family: var(--heading);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0 0 4px;
+}
+
+.settings-subtitle {
+  font-size: 12.5px;
+  color: var(--text);
+  margin: 0 0 22px;
+}
+
+.settings-content label {
+  font-size: 13px;
+  color: var(--text-h);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.settings-content input[type="text"],
+.settings-content input[type="email"],
+.settings-content input[type="password"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  background: var(--bg);
+  font-size: 14px;
+  color: var(--text-h);
+  font-family: var(--sans);
+  box-sizing: border-box;
+}
+
+.settings-content input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--error);
+  margin: -10px 0 14px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.strength-label {
+  font-size: 11.5px;
+  margin: 0 0 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-accent:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.btn-accent:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-outline {
+  background: var(--bg);
+  color: var(--text-h);
+  border-color: var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--code-bg);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+/* --- Avatar --- */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* --- Integrations --- */
+.integration-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.integration-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+}
+
+.integration-name {
+  font-size: 14px;
+  color: var(--text-h);
+  font-weight: 500;
+  margin: 0;
+}
+
+.integration-status {
+  font-size: 12px;
+  color: var(--text);
+  margin: 2px 0 0;
+}
+
+@media (max-width: 700px) {
+  .settings-page {
+    flex-direction: column;
+  }
+  .settings-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+  .settings-nav-title {
+    display: none;
+  }
+}
+
+/* --- Statut email vérifié --- */
+.email-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.email-status.verified {
+  color: var(--success);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.email-status.unverified {
+  color: var(--error);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* --- Déconnexion --- */
+.settings-nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 8px;
+}
+
+.settings-logout {
+  color: var(--error) !important;
+}
+
+.settings-logout:hover {
+  background: rgba(220, 38, 38, 0.1) !important;
+}

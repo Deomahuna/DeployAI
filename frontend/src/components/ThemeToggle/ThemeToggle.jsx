@@ -2,6 +2,7 @@
 // Bouton de bascule entre thème clair et sombre
 // =====================================================
 
+import { FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import "./ThemeToggle.css";
 
@@ -20,7 +21,7 @@ function ThemeToggle() {
                     : "Passer en mode clair"
             }
         >
-            {theme === "light" ? "🌙" : "☀️"}
+            {theme === "light" ? <FiMoon size={16} /> : <FiSun size={16} />}
         </button>
     );
 }

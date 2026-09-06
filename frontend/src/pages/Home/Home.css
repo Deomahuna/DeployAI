@@ -1,164 +1,213 @@
 .home {
-    display: flex;
-    flex-direction: column;
-    min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
 
-.home-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 32px;
-    flex-wrap: wrap;
-    gap: 16px;
+/* --- Navbar --- */
+.home-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  border-bottom: 1px solid var(--border);
 }
 
-.home-brand {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-h);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.home-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--text-h);
 }
 
-.home-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.home-logo svg {
+  color: var(--accent);
 }
 
-.home-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: 500;
-    text-decoration: none;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: transform 0.15s ease, background-color 0.2s ease;
+.home-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-size: 14px;
 }
 
-.home-btn:hover {
-    transform: translateY(-1px);
+.home-links a {
+  color: var(--text);
+  text-decoration: none;
 }
 
-.home-btn-ghost {
-    color: var(--text);
-    border-color: var(--border);
+.home-links a:hover {
+  color: var(--text-h);
 }
 
-.home-btn-ghost:hover {
-    color: var(--text-h);
-    background: var(--code-bg);
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
 }
 
-.home-btn-primary {
-    background: var(--accent);
-    color: #fff;
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
 }
 
-.home-btn-primary:hover {
-    filter: brightness(1.08);
+.btn-accent:hover {
+  opacity: 0.92;
 }
 
-.home-btn-lg {
-    padding: 14px 28px;
-    font-size: 17px;
+.btn-outline {
+  background: transparent;
+  color: var(--text-h);
+  border-color: var(--border);
 }
 
+.btn-outline:hover {
+  background: var(--code-bg);
+}
+
+.btn-lg {
+  padding: 12px 22px;
+  font-size: 15px;
+}
+
+/* --- Hero --- */
 .home-hero {
-    text-align: center;
-    padding: 64px 24px 80px;
-    max-width: 720px;
-    margin: 0 auto;
+  text-align: center;
+  padding: 72px 32px 56px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.home-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-ai-bg);
+  border: 1px solid var(--accent-ai-border);
+  color: var(--accent-ai);
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 20px;
 }
 
 .home-hero h1 {
-    font-size: 44px;
-    line-height: 1.2;
-    letter-spacing: -1px;
-    color: var(--text-h);
-    margin: 0 0 20px;
+  font-family: var(--heading);
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0 0 16px;
+  line-height: 1.25;
 }
 
-.home-hero-subtitle {
-    font-size: 18px;
-    line-height: 1.6;
-    color: var(--text);
-    margin: 0 0 32px;
+.home-hero p {
+  font-size: 16px;
+  color: var(--text);
+  max-width: 520px;
+  margin: 0 auto 28px;
+  line-height: 1.6;
 }
 
+.home-cta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* --- Terminal preview --- */
+.home-terminal-wrap {
+  background: var(--code-bg);
+  padding: 8px 32px 40px;
+}
+
+.home-terminal {
+  background: var(--text-h);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  max-width: 640px;
+  margin: 24px auto 0;
+  box-shadow: var(--shadow);
+}
+
+.term-line {
+  padding: 2px 0;
+  color: var(--bg);
+}
+
+.term-success { color: var(--success); }
+.term-accent { color: var(--accent); }
+.term-ai { color: var(--accent-ai); }
+
+/* --- Features --- */
 .home-features {
-    padding: 40px 24px 80px;
-    max-width: 1000px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
+  padding: 56px 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.home-features h2 {
-    font-size: 28px;
-    color: var(--text-h);
-    margin-bottom: 40px;
+.feature-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
 }
 
-.home-features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-    text-align: left;
+.feature-accent-ai {
+  border-color: var(--accent-ai-border);
 }
 
-.home-feature-card {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    background: var(--code-bg);
+.feature-icon {
+  color: var(--accent);
 }
 
-.home-feature-icon {
-    font-size: 24px;
-    color: var(--accent);
-    margin-bottom: 12px;
+.feature-accent-ai .feature-icon {
+  color: var(--accent-ai);
 }
 
-.home-feature-card h3 {
-    font-size: 18px;
-    color: var(--text-h);
-    margin: 0 0 8px;
+.feature-title {
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 12px 0 6px;
+  font-size: 15px;
 }
 
-.home-feature-card p {
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--text);
-    margin: 0;
+.feature-desc {
+  font-size: 13px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.5;
 }
 
+/* --- Footer --- */
 .home-footer {
-    text-align: center;
-    padding: 24px;
-    border-top: 1px solid var(--border);
-    color: var(--text);
-    font-size: 14px;
+  border-top: 1px solid var(--border);
+  padding: 20px 32px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
 }
 
-@media (max-width: 480px) {
-    .home-header {
-        justify-content: center;
-        text-align: center;
-    }
-
-    .home-hero h1 {
-        font-size: 32px;
-    }
-
-    .home-hero-subtitle {
-        font-size: 16px;
-    }
+@media (max-width: 640px) {
+  .home-links {
+    gap: 14px;
+    font-size: 13px;
+  }
+  .home-hero h1 {
+    font-size: 28px;
+  }
 }

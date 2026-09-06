@@ -1,49 +1,26 @@
-# Modèle représentant la table users
-
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-
 from database import Base
-from models.project import Project
 
 class User(Base):
-
-    # Nom de la table PostgreSQL
     __tablename__ = "users"
 
-    # Colonnes de la table
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=True)
+    email_verified = Column(Boolean, default=False)
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
+    avatar_url = Column(String, nullable=True)
 
-    nom = Column(
-        String(100)
-    )
+    github_id = Column(String, unique=True, nullable=True)
+    github_username = Column(String, nullable=True)
+    github_access_token = Column(String, nullable=True)
+    gitlab_id = Column(String, unique=True, nullable=True)
+    gitlab_username = Column(String, nullable=True)
+    gitlab_access_token = Column(String, nullable=True)
 
-    email = Column(
-        String(150),
-        unique=True
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    mot_de_passe = Column(
-        String(255)
-    )
-
-    role = Column(
-        String(50)
-    )
-
-    date_creation = Column(
-        DateTime,
-        server_default=func.now()
-    )
-        # Relation avec les projets
-    # Un utilisateur peut avoir plusieurs projets
-    projets = relationship(
-        "Project",
-        back_populates="utilisateur"
-    )
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
