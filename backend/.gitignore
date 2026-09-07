@@ -18,3 +18,8 @@ uploads/
 # Bases de données locales (si SQLite utilisé en test)
 *.db
 *.sqlite3
+
+backend/workspace/analysis/tmp_analysis/
+backend/workspace/project_1/
+# Ou pour bloquer tout le dossier workspace :
+backend/workspace/
