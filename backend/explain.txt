@@ -1,0 +1,89 @@
+On relance tout proprement, dans l'ordre. Checklist complète pour démarrer les 4 process nécessaires + vérifications rapides.
+
+1. Docker Desktop
+
+Ouvre Docker Desktop, attends que l'icône baleine soit stable. Vérifie que Redis tourne toujours :
+
+bash
+docker ps
+
+Si deployai-redis n'apparaît pas :
+
+bash
+docker start deployai-redis
+2. Backend — Terminal 1
+bash
+cd backend
+venv\Scripts\activate
+uvicorn main:app --reload
+
+Vérifie qu'il démarre sans erreur (Application startup complete.).
+
+3. Worker Celery — Terminal 2
+bash
+cd backend
+venv\Scripts\activate
+python -m celery -A celery_app worker --loglevel=info --pool=solo
+
+Vérifie que tasks.run_deployment apparaît dans la liste [tasks] et que la connexion Redis passe (Connected to redis://localhost:6379/0).
+
+4. Frontend — Terminal 3
+bash
+cd frontend
+npm run dev
+
+Note l'URL affichée (normalement http://localhost:5173).
+
+5. Vérification .env — backend
+
+Confirme que toutes ces variables sont présentes et correctes :
+
+env
+DATABASE_URL=postgresql://user:password@localhost:5432/deployai
+JWT_SECRET_KEY=...
+ENCRYPTION_KEY=...
+STORAGE_BACKEND=local
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+GITLAB_CLIENT_ID=...
+GITLAB_CLIENT_SECRET=...
+FRONTEND_URL=http://localhost:5173
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+MAIL_USERNAME=rider091629@gmail.com
+MAIL_PASSWORD=...
+MAIL_FROM=rider091629@gmail.com
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+6. Vérification .env — frontend
+env
+VITE_API_URL=http://localhost:8000
+
+Migration
+bash
+alembic revision --autogenerate -m "add branch and subdirectory to projects"
+alembic upgrade head
+
+Vérifie d'abord que Docker Desktop est bien démarré (ouvre l'application, attends que l'icône baleine soit stable dans la barre des tâches), puis dans un nouveau terminal :
+
+bash
+docker run -d -p 6379:6379 --name deployai-redis redis
+
+Vérifie qu'il tourne :
+
+bash
+docker ps
+
+Tu dois voir une ligne avec redis et le port 6379->6379.
+
+Si tu as déjà essayé cette commande avant et que le conteneur existe mais est arrêté, docker run avec le même --name donnera une erreur "the container name is already in use" — dans ce cas :
+
+bash
+docker start deployai-redis
+
+Une fois Redis lancé, retourne dans le terminal Celery (Ctrl+C pour l'arrêter, puis relance) :
+
+bash
+python -m celery -A celery_app worker --loglevel=info --pool=solo

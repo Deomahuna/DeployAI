@@ -1,0 +1,72 @@
+.build-config {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.build-config-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  color: var(--accent-ai);
+}
+
+.build-config-title {
+  font-family: var(--heading);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+.build-config-subtitle {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.build-config-section-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 20px 0 8px;
+}
+
+.language-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.language-card {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.language-card.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.build-config input[type="text"],
+.build-config input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.build-config .btn {
+  margin-top: 28px;
+}

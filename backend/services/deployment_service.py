@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import time
+import zipfile
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -9,39 +10,58 @@ from models.user import User
 from models.project import Project
 from models.deployment import Deployment
 from models.diagnostic import Diagnostic
-from models.enums import DeploymentStatus, DiagnosticSeverity, ProjectStatus
+from models.enums import DeploymentStatus, DiagnosticSeverity, ProjectStatus, BuildStrategy
 from repositories import deployment_repository, project_repository
-from services import docker_service, ai_service, realtime_service
+from services import docker_service, ai_service, realtime_service, build_strategy_service
 from core.security import decrypt_value
 from core.exceptions import DeploymentError, NotFoundError
 
 CLONE_DIR = "workspace"
 
 
-def _clone_repo(repo_url: str, project_id: int) -> str:
-    dest = os.path.join(CLONE_DIR, f"project_{project_id}")
+def _prepare_source(project: Project) -> str:
+    dest = os.path.join(CLONE_DIR, f"project_{project.id}")
     if os.path.exists(dest):
         shutil.rmtree(dest)
     os.makedirs(CLONE_DIR, exist_ok=True)
 
-    result = subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, dest],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        raise DeploymentError(f"Échec du clonage du dépôt : {result.stderr.strip()}")
-    return dest
-
-
-def deploy_project(db: Session, project: Project) -> Deployment:
-    deployment = deployment_repository.get_latest_queued(db, project.id)
-    if deployment:
-        deployment.status = DeploymentStatus.RUNNING
-        deployment = deployment_repository.save(db, deployment)
-    else:
-        deployment = deployment_repository.create(
-            db, Deployment(project_id=project.id, status=DeploymentStatus.RUNNING)
+    if project.repo_url:
+        branch = project.branch or "main"
+        result = subprocess.run(
+            ["git", "clone", "--depth", "1", "--branch", branch, project.repo_url, dest],
+            capture_output=True, text=True,
         )
+        if result.returncode != 0:
+            raise DeploymentError(f"Échec du clonage du dépôt (branche '{branch}') : {result.stderr.strip()}")
+
+        if project.subdirectory:
+            target = os.path.join(dest, project.subdirectory.strip("/"))
+            if not os.path.isdir(target):
+                raise DeploymentError(f"Le sous-dossier '{project.subdirectory}' est introuvable dans le dépôt.")
+            return target
+
+        return dest
+
+    if project.local_archive_path:
+        os.makedirs(dest, exist_ok=True)
+        archive_full_path = project.local_archive_path.lstrip("/")
+        with zipfile.ZipFile(archive_full_path, "r") as zf:
+            zf.extractall(dest)
+
+        if project.subdirectory:
+            target = os.path.join(dest, project.subdirectory.strip("/"))
+            if not os.path.isdir(target):
+                raise DeploymentError(f"Le sous-dossier '{project.subdirectory}' est introuvable dans l'archive.")
+            return target
+
+        return dest
+
+    raise DeploymentError("Aucune source de code disponible pour ce projet.")
+
+
+def deploy_project(db: Session, project: Project, deployment: Deployment) -> Deployment:
+    deployment.status = DeploymentStatus.RUNNING
+    deployment = deployment_repository.save(db, deployment)
 
     project.status = ProjectStatus.RUNNING
     project_repository.save(db, project)
@@ -51,20 +71,45 @@ def deploy_project(db: Session, project: Project) -> Deployment:
     build_logs = ""
 
     try:
-        realtime_service.publish_deployment_event(deployment.id, "cloning", "Clonage du dépôt...")
-        repo_path = _clone_repo(project.repo_url, project.id)
+        realtime_service.publish_deployment_event(deployment.id, "cloning", "Récupération du code source...")
+        repo_path = _prepare_source(project)
+
+        if project.build_config and project.build_config.get("strategy") not in (None, BuildStrategy.UNDETECTED.value):
+            build_config = project.build_config
+            if build_config["strategy"] in (BuildStrategy.GENERATED_NODE.value, BuildStrategy.GENERATED_PYTHON.value):
+                build_strategy_service.regenerate_dockerfile(repo_path, build_config)
+            elif build_config["strategy"] == BuildStrategy.GENERATED_NODE_STATIC.value:
+                build_strategy_service.regenerate_node_static_dockerfile(repo_path, build_config)
+            elif build_config["strategy"] == BuildStrategy.GENERATED_STATIC.value:
+                build_strategy_service.write_static_dockerfile(repo_path)
+        else:
+            realtime_service.publish_deployment_event(deployment.id, "analyzing", "Détection du type de projet...")
+            build_config = build_strategy_service.determine_strategy(repo_path)
+            project.build_config = build_config
+            project_repository.save(db, project)
+
+        if build_config["strategy"] == BuildStrategy.UNDETECTED.value:
+            raise DeploymentError(
+                "Impossible de détecter le type de projet. "
+                "Configure manuellement le build dans les paramètres du projet."
+            )
 
         realtime_service.publish_deployment_event(deployment.id, "building", "Construction de l'image Docker...")
-        client = docker_service.get_docker_client(project.server)
         env_vars = {v.key: decrypt_value(v.value_encrypted) for v in project.env_vars}
 
-        _, build_logs = docker_service.build_and_run(
-            client,
-            repo_path=repo_path,
-            image_tag=f"deployai/{project.name}:latest",
-            container_name=f"deployai-{project.id}",
-            env_vars=env_vars,
-        )
+        if build_config["strategy"] == BuildStrategy.DOCKER_COMPOSE.value:
+            build_logs = docker_service.build_and_run_compose(repo_path, project_name=f"deployai-{project.id}")
+        else:
+            client = docker_service.get_docker_client(project.server)
+            dockerfile_name = build_config.get("dockerfile_path", "Dockerfile")
+            _, build_logs = docker_service.build_and_run(
+                client,
+                repo_path=repo_path,
+                image_tag=f"deployai/{project.name}:latest",
+                container_name=f"deployai-{project.id}",
+                env_vars=env_vars,
+                dockerfile=dockerfile_name,
+            )
 
         deployment.status = DeploymentStatus.SUCCESS
         deployment.logs = build_logs
@@ -87,7 +132,6 @@ def deploy_project(db: Session, project: Project) -> Deployment:
         project_repository.save(db, project)
 
         realtime_service.publish_deployment_event(deployment.id, "failed", str(exc))
-
         realtime_service.publish_deployment_event(deployment.id, "diagnosing", "Analyse de l'erreur par l'IA...")
         _create_diagnostic(db, deployment, project, str(exc), build_logs)
         realtime_service.publish_deployment_event(deployment.id, "diagnosed", "Diagnostic IA prêt.")
@@ -139,4 +183,10 @@ def resolve_and_redeploy(db: Session, current_user: User, deployment_id: int) ->
         diagnostic.resolved = True
         diagnostic.resolved_at = datetime.utcnow()
         db.commit()
-    return deploy_project(db, deployment.project)
+
+    from tasks.deployment_tasks import run_deployment_task
+    new_deployment = deployment_repository.create(
+        db, Deployment(project_id=deployment.project_id, status=DeploymentStatus.QUEUED)
+    )
+    run_deployment_task.delay(deployment.project_id, new_deployment.id)
+    return new_deployment

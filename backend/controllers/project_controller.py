@@ -1,8 +1,11 @@
-from fastapi import Depends
+from fastapi import Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
-from schemas.project import ProjectOut, ProjectDetailOut, ProjectCreate, EnvVarCreate
+from schemas.project import (
+    ProjectOut, ProjectDetailOut, ProjectCreate, EnvVarCreate,
+    ImportUrlRequest, BuildConfigOut, BuildConfigUpdate,
+)
 from schemas.deployment import DeploymentOut
 from core.security import get_current_user
 from services import project_service
@@ -35,6 +38,23 @@ def import_project(
     db: Session = Depends(get_db),
 ) -> ProjectOut:
     return project_service.import_project(db, current_user, payload)
+
+
+def import_from_url(
+    payload: ImportUrlRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProjectOut:
+    return project_service.import_from_url(db, current_user, payload.name, payload.repo_url)
+
+
+def import_from_archive(
+    name: str = Form(...),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProjectOut:
+    return project_service.import_from_archive(db, current_user, name, file)
 
 
 def delete_project(
@@ -72,3 +92,20 @@ def deploy_project(
     db: Session = Depends(get_db),
 ) -> DeploymentOut:
     return project_service.deploy(db, project_id, current_user)
+
+
+def get_build_config(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BuildConfigOut:
+    return project_service.get_build_config(db, project_id, current_user)
+
+
+def update_build_config(
+    project_id: int,
+    payload: BuildConfigUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BuildConfigOut:
+    return project_service.update_build_config(db, project_id, current_user, payload)

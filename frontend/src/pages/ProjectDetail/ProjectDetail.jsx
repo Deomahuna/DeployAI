@@ -70,7 +70,12 @@ function ProjectDetail() {
 
     if (liveStatus === "failed") {
       setRedeploying(false);
-      toast.error("Le déploiement a échoué.");
+      if (liveMessage && liveMessage.includes("Impossible de détecter le type de projet")) {
+        toast.error("Type de projet non détecté — configuration manuelle nécessaire.");
+        navigate(`/projects/${id}/build-config`);
+      } else {
+        toast.error("Le déploiement a échoué.");
+      }
     }
 
     if (liveStatus === "diagnosed") {
@@ -166,10 +171,17 @@ function ProjectDetail() {
             <span className={`badge badge-${project.status}`}>{getStatusLabel(project.status)}</span>
           </div>
           <p className="pd-meta">
-            {project.repo_url} · {project.language || "?"} / {project.framework || "?"}
+            {project.repo_url || "Source : archive locale"} · {project.language || "?"} / {project.framework || "?"}
           </p>
         </div>
         <div className="pd-actions">
+          <button
+            className="btn btn-outline"
+            onClick={() => navigate(`/projects/${id}/build-config`)}
+          >
+            <FiCpu size={15} />
+            Configuration
+          </button>
           <button className="btn btn-outline" onClick={handleRedeploy} disabled={redeploying}>
             <FiRefreshCw size={15} className={redeploying ? "spin" : ""} />
             {redeploying ? "Redéploiement..." : "Redéployer"}

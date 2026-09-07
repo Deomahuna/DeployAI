@@ -18,3 +18,15 @@ async def list_repos(
     if provider == "gitlab":
         return await provider_repo_service.list_gitlab_repos(db, current_user)
     raise NotFoundError("Provider", provider)
+
+
+async def list_branches(
+    provider: str,
+    full_name: str,
+    current_user: User = Depends(get_current_user),
+) -> list[str]:
+    if provider == "github":
+        return await provider_repo_service.list_github_branches(current_user, full_name)
+    if provider == "gitlab":
+        return await provider_repo_service.list_gitlab_branches(current_user, full_name)
+    raise NotFoundError("Provider", provider)

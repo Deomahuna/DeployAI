@@ -69,3 +69,35 @@ async def list_gitlab_repos(db: Session, current_user: User) -> list[dict]:
         }
         for repo in response.json()
     ]
+
+
+async def list_github_branches(current_user: User, full_name: str) -> list[str]:
+    if not current_user.github_access_token:
+        raise NotFoundError("Intégration GitHub", "non connectée")
+    token = decrypt_value(current_user.github_access_token)
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.github.com/repos/{full_name}/branches",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"per_page": 100},
+        )
+    if response.status_code != 200:
+        raise ExternalProviderError("GitHub", "Impossible de récupérer les branches.")
+    return [b["name"] for b in response.json()]
+
+
+async def list_gitlab_branches(current_user: User, full_name: str) -> list[str]:
+    if not current_user.gitlab_access_token:
+        raise NotFoundError("Intégration GitLab", "non connectée")
+    token = decrypt_value(current_user.gitlab_access_token)
+    project_id_encoded = full_name.replace("/", "%2F")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://gitlab.com/api/v4/projects/{project_id_encoded}/repository/branches",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    if response.status_code != 200:
+        raise ExternalProviderError("GitLab", "Impossible de récupérer les branches.")
+    return [b["name"] for b in response.json()]

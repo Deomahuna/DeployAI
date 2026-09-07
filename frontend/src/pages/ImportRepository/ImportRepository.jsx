@@ -8,18 +8,124 @@ import {
   FiLock,
   FiUnlock,
   FiCpu,
+  FiLink,
+  FiUpload,
 } from "react-icons/fi";
-import { getIntegrations, connectGithub, connectGitlab } from "../../services/oauthService.js";
-import { listRepos } from "../../services/importService.js";
-import { analyzeRepo, importProject } from "../../services/projectService.js";
+import {
+  getIntegrations,
+  connectGithub,
+  connectGitlab,
+} from "../../services/oauthService.js";
+import { listRepos, listBranches } from "../../services/importService.js";
+
 import { useToast } from "../../context/ToastContext.jsx";
 import "./ImportRepository.css";
+import { analyzeRepo, importProject, importFromUrl, importFromArchive, deployProject } from "../../services/projectService.js";
+
+function UrlImportForm({ onImported }) {
+  const toast = useToast();
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !url.trim()) return;
+    setImporting(true);
+    try {
+      const project = await importFromUrl(name, url);
+      toast.success(`${project.name} importé.`);
+      onImported(project);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <form className="url-import-form" onSubmit={handleSubmit}>
+      <label>Nom du projet</label>
+      <input
+        type="text"
+        placeholder="mon-projet"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <label>URL du dépôt Git public</label>
+      <input
+        type="url"
+        placeholder="https://github.com/utilisateur/depot.git"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        required
+      />
+      <button
+        type="submit"
+        className="btn btn-accent btn-block"
+        disabled={importing}
+      >
+        {importing ? "Import en cours..." : "Importer depuis cette URL"}
+      </button>
+    </form>
+  );
+}
+
+function ArchiveImportForm({ onImported }) {
+  const toast = useToast();
+  const [name, setName] = useState("");
+  const [file, setFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !file) return;
+    setImporting(true);
+    try {
+      const project = await importFromArchive(name, file);
+      toast.success(`${project.name} importé.`);
+      onImported(project);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <form className="archive-import-form" onSubmit={handleSubmit}>
+      <label>Nom du projet</label>
+      <input
+        type="text"
+        placeholder="mon-projet"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <label>Archive du projet (.zip)</label>
+      <input
+        type="file"
+        accept=".zip"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        required
+      />
+      <button
+        type="submit"
+        className="btn btn-accent btn-block"
+        disabled={importing}
+      >
+        {importing ? "Import en cours..." : "Importer l'archive"}
+      </button>
+    </form>
+  );
+}
 
 function ImportRepository() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [provider, setProvider] = useState("github");
+  const [mode, setMode] = useState("github");
   const [integrations, setIntegrations] = useState(null);
   const [repos, setRepos] = useState([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
@@ -28,6 +134,11 @@ function ImportRepository() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [deploying, setDeploying] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [subdirectory, setSubdirectory] = useState("");
+
+  const isGitProvider = mode === "github" || mode === "gitlab";
 
   useEffect(() => {
     getIntegrations()
@@ -36,40 +147,48 @@ function ImportRepository() {
   }, []);
 
   useEffect(() => {
-    if (!integrations) return;
-    const connected = integrations[provider]?.connected;
+    if (!isGitProvider || !integrations) return;
+    const connected = integrations[mode]?.connected;
     if (!connected) {
       setRepos([]);
       return;
     }
     setLoadingRepos(true);
-    listRepos(provider)
+    listRepos(mode)
       .then(setRepos)
       .catch((err) => toast.error(err.message))
       .finally(() => setLoadingRepos(false));
-  }, [provider, integrations]);
+  }, [mode, integrations]);
 
-  const isConnected = integrations?.[provider]?.connected;
-  const account = integrations?.[provider]?.account;
+  const isConnected = isGitProvider ? integrations?.[mode]?.connected : false;
+  const account = isGitProvider ? integrations?.[mode]?.account : null;
 
   const filteredRepos = repos.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase())
+    r.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleConnect = () => {
-    if (provider === "github") connectGithub();
+    if (mode === "github") connectGithub();
     else connectGitlab();
   };
 
   const handleImport = async (repo) => {
     setSelectedRepo(repo);
     setAnalysis(null);
+    setBranches([]);
+    setSelectedBranch("main");
+    setSubdirectory("");
     setAnalyzing(true);
     try {
-      const result = await analyzeRepo(
-        `https://${provider === "github" ? "github.com" : "gitlab.com"}/${repo.full_name}`
-      );
+      const [result, branchList] = await Promise.all([
+        analyzeRepo(
+          `https://${mode === "github" ? "github.com" : "gitlab.com"}/${repo.full_name}`,
+        ),
+        listBranches(mode, repo.full_name),
+      ]);
       setAnalysis(result);
+      setBranches(branchList);
+      if (branchList.length > 0) setSelectedBranch(branchList[0]);
     } catch (err) {
       toast.error(err.message);
       setSelectedRepo(null);
@@ -78,25 +197,63 @@ function ImportRepository() {
     }
   };
 
-  const handleConfirmDeploy = async () => {
-    setDeploying(true);
+  const handleBranchChange = async (newBranch) => {
+    setSelectedBranch(newBranch);
+    setAnalyzing(true);
     try {
-      const project = await importProject({
-        name: selectedRepo.name,
-        repo_url: `https://${provider === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
-        provider,
-        repo_id: selectedRepo.id,
-        language: analysis.language,
-        framework: analysis.framework,
-        dependencies_summary: analysis.dependencies_summary,
-      });
-      toast.success(`${project.name} importé avec succès.`);
-      navigate("/deployments");
+      const result = await analyzeRepo(
+        `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
+        newBranch,
+      );
+      setAnalysis(result);
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setDeploying(false);
+      setAnalyzing(false);
     }
+  };
+
+  const handleSubdirChange = async (newSubdir) => {
+  setAnalyzing(true);
+  try {
+    const result = await analyzeRepo(
+      `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
+      selectedBranch,
+      newSubdir.trim() || null
+    );
+    setAnalysis(result);
+  } catch (err) {
+    toast.error(err.message);
+  } finally {
+    setAnalyzing(false);
+  }
+};
+
+const handleConfirmDeploy = async () => {
+  setDeploying(true);
+  try {
+    const project = await importProject({
+      name: selectedRepo.name,
+      repo_url: `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
+      provider: mode,
+      repo_id: selectedRepo.id,
+      language: analysis.language,
+      framework: analysis.framework,
+      dependencies_summary: analysis.dependencies_summary,
+      branch: selectedBranch,
+      subdirectory: subdirectory.trim() || null,
+    });
+    toast.success(`${project.name} importé, déploiement en cours...`);
+    await deployProject(project.id);
+    navigate(`/projects/${project.id}`);
+  } catch (err) {
+    toast.error(err.message);
+  } finally {
+    setDeploying(false);
+  }
+};
+  const handleDirectImportSuccess = (project) => {
+    navigate(`/projects/${project.id}`);
   };
 
   return (
@@ -104,43 +261,64 @@ function ImportRepository() {
       <header className="import-header">
         <p className="import-title">Importer un dépôt</p>
         <p className="import-subtitle">
-          Connectez un dépôt GitHub ou GitLab pour créer un nouveau projet
+          Connecte un dépôt GitHub/GitLab, ou importe directement via une URL ou
+          une archive
         </p>
       </header>
 
       <div className="import-body">
         <div className="provider-tabs">
           <button
-            className={provider === "github" ? "active" : ""}
-            onClick={() => {
-              setProvider("github");
-              setSelectedRepo(null);
-              setAnalysis(null);
-            }}
+            className={mode === "github" ? "active" : ""}
+            onClick={() => setMode("github")}
           >
             <FiGithub size={16} /> GitHub
           </button>
           <button
-            className={provider === "gitlab" ? "active" : ""}
-            onClick={() => {
-              setProvider("gitlab");
-              setSelectedRepo(null);
-              setAnalysis(null);
-            }}
+            className={mode === "gitlab" ? "active" : ""}
+            onClick={() => setMode("gitlab")}
           >
             <FiGitlab size={16} /> GitLab
           </button>
+          <button
+            className={mode === "url" ? "active" : ""}
+            onClick={() => setMode("url")}
+          >
+            <FiLink size={16} /> URL directe
+          </button>
+          <button
+            className={mode === "archive" ? "active" : ""}
+            onClick={() => setMode("archive")}
+          >
+            <FiUpload size={16} /> Upload ZIP
+          </button>
         </div>
 
-        {!isConnected ? (
+        {mode === "url" && (
+          <UrlImportForm onImported={handleDirectImportSuccess} />
+        )}
+        {mode === "archive" && (
+          <ArchiveImportForm onImported={handleDirectImportSuccess} />
+        )}
+
+        {isGitProvider && !isConnected && (
           <div className="import-not-connected">
-            <p>Tu n'as pas encore connecté ton compte {provider === "github" ? "GitHub" : "GitLab"}.</p>
+            <p>
+              Tu n'as pas encore connecté ton compte{" "}
+              {mode === "github" ? "GitHub" : "GitLab"}.
+            </p>
             <button className="btn btn-accent" onClick={handleConnect}>
-              {provider === "github" ? <FiGithub size={16} /> : <FiGitlab size={16} />}
-              Connecter {provider === "github" ? "GitHub" : "GitLab"}
+              {mode === "github" ? (
+                <FiGithub size={16} />
+              ) : (
+                <FiGitlab size={16} />
+              )}
+              Connecter {mode === "github" ? "GitHub" : "GitLab"}
             </button>
           </div>
-        ) : (
+        )}
+
+        {isGitProvider && isConnected && (
           <>
             <div className="connection-status">
               <FiCheckCircle size={16} />
@@ -159,28 +337,38 @@ function ImportRepository() {
 
             <div className="repo-list">
               {loadingRepos && <p>Chargement des dépôts...</p>}
-              {!loadingRepos && filteredRepos.map((repo) => (
-                <div key={repo.id} className="repo-row">
-                  <div className="repo-info">
-                    {repo.private ? <FiLock size={15} /> : <FiUnlock size={15} />}
-                    <div>
-                      <p className="repo-name">{repo.name}</p>
-                      <p className="repo-updated">
-                        Mis à jour {new Date(repo.updated_at).toLocaleDateString()}
-                      </p>
+              {!loadingRepos &&
+                filteredRepos.map((repo) => (
+                  <div key={repo.id} className="repo-row">
+                    <div className="repo-info">
+                      {repo.private ? (
+                        <FiLock size={15} />
+                      ) : (
+                        <FiUnlock size={15} />
+                      )}
+                      <div>
+                        <p className="repo-name">{repo.name}</p>
+                        <p className="repo-updated">
+                          Mis à jour{" "}
+                          {new Date(repo.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      className={
+                        repo.imported ? "btn btn-muted" : "btn btn-accent-sm"
+                      }
+                      disabled={repo.imported}
+                      onClick={() => handleImport(repo)}
+                    >
+                      {repo.imported ? "Déjà importé" : "Importer"}
+                    </button>
                   </div>
-                  <button
-                    className={repo.imported ? "btn btn-muted" : "btn btn-accent-sm"}
-                    disabled={repo.imported}
-                    onClick={() => handleImport(repo)}
-                  >
-                    {repo.imported ? "Déjà importé" : "Importer"}
-                  </button>
-                </div>
-              ))}
+                ))}
               {!loadingRepos && filteredRepos.length === 0 && (
-                <p className="repo-empty">Aucun dépôt ne correspond à ta recherche.</p>
+                <p className="repo-empty">
+                  Aucun dépôt ne correspond à ta recherche.
+                </p>
               )}
             </div>
 
@@ -192,7 +380,9 @@ function ImportRepository() {
                 </div>
 
                 {analyzing ? (
-                  <p className="analysis-loading">Analyse du dépôt en cours...</p>
+                  <p className="analysis-loading">
+                    Analyse du dépôt en cours...
+                  </p>
                 ) : (
                   analysis && (
                     <>
@@ -210,12 +400,41 @@ function ImportRepository() {
                           <p>{analysis.dependencies_summary || "—"}</p>
                         </div>
                       </div>
+
+                      <div className="branch-subdir-row">
+                        <div>
+                          <label>Branche</label>
+                          <select
+                            value={selectedBranch}
+                            onChange={(e) => handleBranchChange(e.target.value)}
+                          >
+                            {branches.map((b) => (
+                              <option key={b} value={b}>
+                                {b}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label>Sous-dossier (optionnel)</label>
+                          <input
+                            type="text"
+                            placeholder="ex: backend/ (vide = racine)"
+                            value={subdirectory}
+                            onChange={(e) => setSubdirectory(e.target.value)}
+                            onBlur={() => handleSubdirChange(subdirectory)}
+                          />
+                        </div>
+                      </div>
+
                       <button
                         className="btn btn-accent btn-block"
                         onClick={handleConfirmDeploy}
                         disabled={deploying}
                       >
-                        {deploying ? "Import en cours..." : "Confirmer et déployer"}
+                        {deploying
+                          ? "Import en cours..."
+                          : "Confirmer et déployer"}
                       </button>
                     </>
                   )

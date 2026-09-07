@@ -1,0 +1,6 @@
+FROM python:{{ version }}-slim
+WORKDIR /app
+COPY . .
+RUN {{ install_cmd }}
+EXPOSE {{ port }}
+CMD [{{ start_cmd_json }}]

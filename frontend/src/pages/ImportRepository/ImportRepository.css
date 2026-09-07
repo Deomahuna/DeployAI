@@ -242,3 +242,120 @@
 .import-not-connected p {
   margin-bottom: 16px;
 }
+
+.url-import-form,
+.archive-import-form {
+  max-width: 480px;
+  margin: 20px 0;
+}
+
+.url-import-form label,
+.archive-import-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+
+.url-import-form label:first-of-type,
+.archive-import-form label:first-of-type {
+  margin-top: 0;
+}
+
+.url-import-form input,
+.archive-import-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.url-import-form .btn,
+.archive-import-form .btn {
+  margin-top: 20px;
+}
+
+.import-not-connected {
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.import-not-connected p {
+  margin-bottom: 16px;
+}
+
+.url-import-form,
+.archive-import-form {
+  max-width: 480px;
+  margin: 20px 0;
+}
+
+.url-import-form label,
+.archive-import-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+
+.url-import-form label:first-of-type,
+.archive-import-form label:first-of-type {
+  margin-top: 0;
+}
+
+.url-import-form input,
+.archive-import-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.url-import-form .btn,
+.archive-import-form .btn {
+  margin-top: 20px;
+}
+
+.branch-subdir-row {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.branch-subdir-row > div {
+  flex: 1;
+}
+
+.branch-subdir-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.branch-subdir-row select,
+.branch-subdir-row input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 13px;
+  box-sizing: border-box;
+}

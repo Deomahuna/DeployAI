@@ -9,4 +9,4 @@ def analyze_project(
     payload: AnalyzeRequest,
     current_user: User = Depends(get_current_user),
 ) -> AnalysisResult:
-    return analysis_service.analyze_repo(payload.repo_url)
+    return analysis_service.analyze_repo(payload.repo_url, payload.branch, payload.subdirectory)

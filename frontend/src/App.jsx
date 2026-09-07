@@ -18,6 +18,7 @@ import ImportRepository from "./pages/ImportRepository/ImportRepository.jsx";
 import Deployments from "./pages/Deployments/Deployments.jsx";
 import Diagnostics from "./pages/Diagnostics/Diagnostics.jsx";
 import Settings from "./pages/Settings/Settings.jsx";
+import BuildConfig from "./pages/BuildConfig/BuildConfig.jsx";
 
 function App() {
     return (
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/import" element={<ImportRepository />} />
                 <Route path="/deployments" element={<Deployments />} />
                 <Route path="/diagnostics" element={<Diagnostics />} />
+                <Route path="/projects/:id/build-config" element={<BuildConfig />} />
                 <Route path="/settings" element={<Settings />} />
             </Route>
 

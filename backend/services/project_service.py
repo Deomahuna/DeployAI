@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from fastapi import UploadFile
 from models.user import User
 from models.project import Project
 from models.deployment import Deployment
@@ -9,6 +10,7 @@ from repositories import project_repository, deployment_repository
 from core.security import encrypt_value, decrypt_value
 from core.exceptions import NotFoundError
 from tasks.deployment_tasks import run_deployment_task
+from storage import get_storage
 
 
 def _ensure_owner(project: Project | None, current_user: User) -> Project:
@@ -50,6 +52,33 @@ def import_project(db: Session, current_user: User, payload: ProjectCreate) -> P
         language=payload.language,
         framework=payload.framework,
         dependencies_summary=payload.dependencies_summary,
+        branch=payload.branch or "main",
+        subdirectory=payload.subdirectory,
+        status=ProjectStatus.PENDING,
+        owner_id=current_user.id,
+    )
+    return project_repository.create(db, project)
+
+
+def import_from_url(db: Session, current_user: User, name: str, repo_url: str) -> Project:
+    project = Project(
+        name=name,
+        repo_url=repo_url,
+        provider="git-url",
+        status=ProjectStatus.PENDING,
+        owner_id=current_user.id,
+    )
+    return project_repository.create(db, project)
+
+
+def import_from_archive(db: Session, current_user: User, name: str, file: UploadFile) -> Project:
+    storage = get_storage()
+    archive_path = storage.save(file, folder="project-archives")
+    project = Project(
+        name=name,
+        repo_url=None,
+        local_archive_path=archive_path,
+        provider="upload",
         status=ProjectStatus.PENDING,
         owner_id=current_user.id,
     )
@@ -94,5 +123,20 @@ def deploy(db: Session, project_id: int, current_user: User) -> Deployment:
         db, Deployment(project_id=project.id, status=DeploymentStatus.QUEUED)
     )
 
-    run_deployment_task.delay(project.id)
+    run_deployment_task.delay(project.id, deployment.id)
     return deployment
+
+def get_build_config(db: Session, project_id: int, current_user: User) -> dict:
+    project = get_project(db, project_id, current_user)
+    return project.build_config or {"strategy": "undetected"}
+
+
+def update_build_config(db: Session, project_id: int, current_user: User, payload) -> dict:
+    project = get_project(db, project_id, current_user)
+    config = project.build_config or {}
+    updates = payload.dict(exclude_unset=True)
+    config.update(updates)
+    config["strategy"] = "manual"
+    project.build_config = config
+    project_repository.save(db, project)
+    return config

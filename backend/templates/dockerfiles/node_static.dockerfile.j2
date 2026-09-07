@@ -1,0 +1,9 @@
+FROM node:{{ version }}-alpine AS build
+WORKDIR /app
+COPY . .
+RUN {{ install_cmd }}
+RUN {{ build_cmd }}
+
+FROM nginx:alpine
+COPY --from=build /app/{{ output_dir }} /usr/share/nginx/html
+EXPOSE 80
