@@ -1,3 +1,7 @@
+python -m venv venv
+.\venv\Scripts\activate.bat
+
+
 On relance tout proprement, dans l'ordre. Checklist complète pour démarrer les 4 process nécessaires + vérifications rapides.
 
 1. Docker Desktop

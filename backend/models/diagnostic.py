@@ -11,7 +11,10 @@ class Diagnostic(Base):
     deployment_id = Column(Integer, ForeignKey("deployments.id"), unique=True, nullable=False)
 
     cause = Column(Text, nullable=False)
-    severity = Column(Enum(DiagnosticSeverity), nullable=False)
+    severity = Column(
+        Enum(DiagnosticSeverity, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False
+    )
     confidence = Column(Float, nullable=False)         # 0.0 à 1.0
     solutions = Column(JSON, nullable=False)            # liste de {label, command}
 

@@ -10,8 +10,12 @@ class Deployment(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
 
-    status = Column(Enum(DeploymentStatus), default=DeploymentStatus.QUEUED, nullable=False)
-    logs = Column(Text, nullable=True)                # sortie brute (build + run)
+    status = Column(
+        Enum(DeploymentStatus, values_callable=lambda obj: [e.value for e in obj]),
+        default=DeploymentStatus.QUEUED,
+        nullable=False
+    )
+    logs = Column(Text, nullable=True)
     commit_sha = Column(String, nullable=True)
     duration_seconds = Column(Integer, nullable=True)
 

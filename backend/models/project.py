@@ -16,7 +16,11 @@ class Project(Base):
     language = Column(String, nullable=True)
     framework = Column(String, nullable=True)
     dependencies_summary = Column(String, nullable=True)
-    status = Column(Enum(ProjectStatus), default=ProjectStatus.PENDING, nullable=False)
+    status = Column(
+        Enum(ProjectStatus, values_callable=lambda obj: [e.value for e in obj]),
+        default=ProjectStatus.PENDING,
+        nullable=False
+    )
     url = Column(String, nullable=True)
     build_config = Column(JSON, nullable=True)
     branch = Column(String, nullable=True, default="main")
