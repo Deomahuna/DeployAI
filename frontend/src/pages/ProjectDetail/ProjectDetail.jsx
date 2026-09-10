@@ -279,6 +279,22 @@ function ProjectDetail() {
                     </button>
                   )}
                 </div>
+                {d.status === "success" && d.preview_urls && d.preview_urls.length > 0 && (
+                  <div className="pd-deploy-preview-links">
+                    {d.preview_urls.map((p) => (
+                      <a
+                        key={p.url}
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pd-deploy-preview-link"
+                      >
+                        <FiExternalLink size={12} />
+                        {p.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {deployments.length === 0 && (

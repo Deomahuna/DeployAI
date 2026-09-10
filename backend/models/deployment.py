@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Text, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
 from models.enums import DeploymentStatus
+
 
 class Deployment(Base):
     __tablename__ = "deployments"
@@ -18,6 +19,11 @@ class Deployment(Base):
     logs = Column(Text, nullable=True)
     commit_sha = Column(String, nullable=True)
     duration_seconds = Column(Integer, nullable=True)
+    # Liste de toutes les URLs exposées par ce déploiement :
+    # [{"label": "web", "url": "http://host:32768"}, {"label": "api", "url": "http://host:32769"}, ...]
+    # Remplace l'ancien champ preview_url (String unique) qui ne pouvait
+    # retenir qu'un seul port, perdant silencieusement les autres.
+    preview_urls = Column(JSON, nullable=True)
 
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     finished_at = Column(DateTime(timezone=True), nullable=True)

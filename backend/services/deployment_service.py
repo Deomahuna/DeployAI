@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import subprocess
 import time
 import zipfile
@@ -10,19 +11,46 @@ from models.user import User
 from models.project import Project
 from models.deployment import Deployment
 from models.diagnostic import Diagnostic
+from models.server import Server
 from models.enums import DeploymentStatus, DiagnosticSeverity, ProjectStatus, BuildStrategy
 from repositories import deployment_repository, project_repository
 from services import docker_service, ai_service, realtime_service, build_strategy_service
 from core.security import decrypt_value
 from core.exceptions import DeploymentError, NotFoundError
 
-CLONE_DIR = "workspace"
+import tempfile
+
+CLONE_DIR = os.path.join(tempfile.gettempdir(), "deployai_workspace")
+
+
+def _remove_readonly(func, path, exc_info):
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except PermissionError:
+        # Le fichier est encore verrouillé (antivirus, handle process pas relâché) :
+        # on laisse _rmtree_with_retry retenter au lieu d'échouer immédiatement.
+        pass
+
+
+def _rmtree_with_retry(path: str, attempts: int = 5, delay: float = 0.4) -> None:
+    for attempt in range(attempts):
+        try:
+            shutil.rmtree(path, onerror=_remove_readonly)
+            return
+        except (PermissionError, OSError) as exc:
+            if attempt == attempts - 1:
+                raise DeploymentError(
+                    f"Impossible de supprimer l'ancien répertoire de build '{path}' "
+                    f"(fichier verrouillé) : {exc}"
+                )
+            time.sleep(delay * (attempt + 1))
 
 
 def _prepare_source(project: Project) -> str:
     dest = os.path.join(CLONE_DIR, f"project_{project.id}")
     if os.path.exists(dest):
-        shutil.rmtree(dest)
+        _rmtree_with_retry(dest)
     os.makedirs(CLONE_DIR, exist_ok=True)
 
     if project.repo_url:
@@ -57,6 +85,40 @@ def _prepare_source(project: Project) -> str:
         return dest
 
     raise DeploymentError("Aucune source de code disponible pour ce projet.")
+
+
+def _build_preview_urls(server: Server | None, port_mappings: dict) -> list[dict]:
+    """
+    Transforme les ports mappés (venant soit de build_and_run, soit de
+    get_compose_port_mappings) en liste uniforme d'URLs consultables.
+
+    port_mappings accepte deux formats :
+    - stratégie directe : { "<container_port>/tcp": "<host_port>", ... }
+    - stratégie compose  : { "<service_name>": { "<container_port>/tcp": "<host_port>", ... }, ... }
+
+    Retourne : [{"label": ..., "url": ...}, ...]
+    """
+    if not port_mappings:
+        return []
+
+    host = docker_service.resolve_preview_host(server)
+    urls = []
+
+    first_value = next(iter(port_mappings.values()))
+    is_compose = isinstance(first_value, dict)
+
+    if is_compose:
+        for service_name, ports in port_mappings.items():
+            for container_port, host_port in ports.items():
+                port_label = container_port.split("/")[0]
+                label = service_name if len(ports) == 1 else f"{service_name} ({port_label})"
+                urls.append({"label": label, "url": f"http://{host}:{host_port}"})
+    else:
+        for container_port, host_port in port_mappings.items():
+            label = container_port.split("/")[0]
+            urls.append({"label": label, "url": f"http://{host}:{host_port}"})
+
+    return urls
 
 
 def deploy_project(db: Session, project: Project, deployment: Deployment) -> Deployment:
@@ -97,23 +159,37 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
         realtime_service.publish_deployment_event(deployment.id, "building", "Construction de l'image Docker...")
         env_vars = {v.key: decrypt_value(v.value_encrypted) for v in project.env_vars}
 
+        preview_urls: list[dict] = []
+
         if build_config["strategy"] == BuildStrategy.DOCKER_COMPOSE.value:
             build_logs = docker_service.build_and_run_compose(repo_path, project_name=f"deployai-{project.id}")
+            client = docker_service.get_docker_client(project.server)
+            port_mappings = docker_service.get_compose_port_mappings(client, project_name=f"deployai-{project.id}")
+            preview_urls = _build_preview_urls(project.server, port_mappings)
         else:
             client = docker_service.get_docker_client(project.server)
             dockerfile_name = build_config.get("dockerfile_path", "Dockerfile")
-            _, build_logs = docker_service.build_and_run(
+
+            def _on_log(line: str):
+                realtime_service.publish_deployment_event(deployment.id, "log", line)
+
+            _, build_logs, port_mappings = docker_service.build_and_run(
                 client,
                 repo_path=repo_path,
-                image_tag=f"deployai/{project.name}:latest",
+                image_tag=f"deployai/{project.name.lower().replace(' ', '-')}:latest",
                 container_name=f"deployai-{project.id}",
                 env_vars=env_vars,
                 dockerfile=dockerfile_name,
+                on_log=_on_log,
             )
+            preview_urls = _build_preview_urls(project.server, port_mappings)
 
         deployment.status = DeploymentStatus.SUCCESS
         deployment.logs = build_logs
+        deployment.preview_urls = preview_urls
         project.status = ProjectStatus.SUCCESS
+        if preview_urls:
+            project.url = preview_urls[0]["url"]
         deployment.duration_seconds = int(time.time() - started)
         deployment.finished_at = datetime.utcnow()
         project_repository.save(db, project)

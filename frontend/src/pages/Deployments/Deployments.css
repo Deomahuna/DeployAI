@@ -212,3 +212,27 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+.deployment-preview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+}
+
+.deployment-preview-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-decoration: none;
+  background: rgba(52, 199, 89, 0.12);
+  color: #22863a;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.deployment-preview-link:hover {
+  background: rgba(52, 199, 89, 0.2);
+}

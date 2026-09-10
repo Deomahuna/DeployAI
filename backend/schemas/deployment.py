@@ -3,12 +3,18 @@ from datetime import datetime
 from typing import Optional, List
 
 
+class PreviewUrlItem(BaseModel):
+    label: str
+    url: str
+
+
 class DeploymentOut(BaseModel):
     id: int
     project_id: int
     status: str
     logs: Optional[str] = None
     duration_seconds: Optional[int] = None
+    preview_urls: Optional[List[PreviewUrlItem]] = None
     started_at: datetime
     finished_at: Optional[datetime] = None
 

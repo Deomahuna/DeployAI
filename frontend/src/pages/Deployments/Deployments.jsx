@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FiChevronRight, FiChevronDown, FiCpu } from "react-icons/fi";
+import { FiChevronRight, FiChevronDown, FiCpu, FiExternalLink } from "react-icons/fi";
 import { listDeployments, getDiagnosis } from "../../services/deploymentService.js";
 import { listProjects } from "../../services/projectService.js";
 import { getStatusLabel } from "../../constants/status.js";
@@ -32,12 +32,45 @@ function DiagnosisPreview({ deploymentId, navigate }) {
   );
 }
 
-function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) {
-  const isLive = deployment.status === "queued" || deployment.status === "running";
-  const { status: liveStatus, message: liveMessage } = useDeploymentStatus(isLive ? deployment.id : null);
+function PreviewLinks({ previewUrls }) {
+  if (!previewUrls || previewUrls.length === 0) return null;
 
+  return (
+    <div className="deployment-preview-links">
+      {previewUrls.map((p) => (
+        <a
+          key={p.url}
+          href={p.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="deployment-preview-link"
+        >
+          <FiExternalLink size={12} />
+          {p.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) {
+  // On ne s'abonne au WS que si le statut connu (initial) est actif.
+  const shouldListen = deployment.status === "queued" || deployment.status === "running";
+  const { status: liveStatus, message: liveMessage, logs: liveLogs } = useDeploymentStatus(
+    shouldListen ? deployment.id : null
+  );
+
+  // Le statut affiché priorise le live, mais retombe toujours sur la donnée
+  // fraîchement re-fetchée (deployment.status) — donc "isLive" se remet bien
+  // à jour même si le WS n'a jamais rien reçu.
   const displayStatus = liveStatus || deployment.status;
+  const isLive = displayStatus === "queued" || displayStatus === "running";
   const displayLabel = isLive && liveMessage ? liveMessage : getStatusLabel(displayStatus);
+
+  const displayLogs =
+    isLive && liveLogs && liveLogs.length > 0
+      ? liveLogs.join("\n")
+      : deployment.logs || "Aucun log disponible.";
 
   return (
     <div className={`deployment-row status-${displayStatus}`}>
@@ -59,8 +92,12 @@ function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) 
 
       {isOpen && (
         <>
+          {displayStatus === "success" && (
+            <PreviewLinks previewUrls={deployment.preview_urls} />
+          )}
+
           <div className="deployment-logs">
-            {(deployment.logs || "Aucun log disponible.").split("\n").map((line, i) => (
+            {displayLogs.split("\n").map((line, i) => (
               <div
                 key={i}
                 className={`log-line ${displayStatus === "failed" ? "log-error" : ""}`}
@@ -108,6 +145,25 @@ function Deployments() {
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
   }, [filter]);
+
+  // Filet de sécurité : tant qu'un déploiement est en cours, on re-synchronise
+  // périodiquement avec le backend (source de vérité en base) — au cas où
+  // l'événement WS final aurait été manqué (déploiement trop rapide,
+  // connexion pas encore ouverte, coupure réseau, etc.)
+  useEffect(() => {
+    const hasActive = deployments.some(
+      (d) => d.status === "queued" || d.status === "running"
+    );
+    if (!hasActive) return;
+
+    const interval = setInterval(() => {
+      listDeployments(filter === "all" ? null : filter)
+        .then(setDeployments)
+        .catch(() => {});
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [deployments, filter]);
 
   const toggleRow = (id) => {
     setOpenId((current) => (current === id ? null : id));
