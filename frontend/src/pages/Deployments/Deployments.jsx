@@ -8,14 +8,55 @@ import { useDeploymentStatus } from "../../hooks/useDeploymentStatus.js";
 import { useToast } from "../../context/ToastContext.jsx";
 import "./Deployments.css";
 
-function DiagnosisPreview({ deploymentId, navigate }) {
-  const [diagnosis, setDiagnosis] = useState(null);
+const TERMINAL_STATUSES = ["success", "failed"];
 
+function DiagnosisPreview({ deploymentId, navigate, liveDiagnosisStatus, liveDiagnosisMessage }) {
+  const [diagnosis, setDiagnosis] = useState(null);
+  const [attempted, setAttempted] = useState(false);
+
+  // On tente un fetch initial (cas d'un déploiement déjà en échec au
+  // chargement de la page, où aucun WebSocket ne s'ouvre puisque
+  // shouldListen ne se déclenche que pour queued/running).
   useEffect(() => {
-    getDiagnosis(deploymentId).then(setDiagnosis).catch(() => {});
+    getDiagnosis(deploymentId)
+      .then(setDiagnosis)
+      .catch(() => {})
+      .finally(() => setAttempted(true));
   }, [deploymentId]);
 
-  if (!diagnosis) return null;
+  // Puis on re-tente dès que le WebSocket confirme que le diagnostic est
+  // prêt ("diagnosed"), pour le cas d'un déploiement qui vient d'échouer
+  // en direct pendant que la page est ouverte.
+  useEffect(() => {
+    if (liveDiagnosisStatus === "diagnosed") {
+      getDiagnosis(deploymentId).then(setDiagnosis).catch(() => {});
+    }
+  }, [liveDiagnosisStatus, deploymentId]);
+
+  const isDiagnosing = liveDiagnosisStatus === "failed" || liveDiagnosisStatus === "diagnosing";
+
+  if (!diagnosis && isDiagnosing) {
+    return (
+      <div className="diagnosis-preview diagnosis-pending">
+        <div className="diagnosis-preview-header">
+          <FiCpu size={15} />
+          <span>Diagnostic IA</span>
+        </div>
+        <p className="diagnosis-cause">
+          <span className="live-dot" />
+          {liveDiagnosisMessage || "Analyse de l'erreur par l'IA en cours..."}
+        </p>
+      </div>
+    );
+  }
+
+  if (!diagnosis) {
+    // Pas de flux live (déploiement historique) et le fetch initial n'a
+    // encore rien trouvé — on n'affiche rien tant qu'on n'a pas au moins
+    // essayé une fois, pour éviter un flash vide inutile.
+    if (!attempted) return null;
+    return null;
+  }
 
   return (
     <div className="diagnosis-preview">
@@ -53,22 +94,51 @@ function PreviewLinks({ previewUrls }) {
   );
 }
 
+// Le backend passe par plusieurs sous-statuts transitoires pendant un
+// déploiement (cloning, analyzing, building, diagnosing, diagnosed) qui ne
+// sont JAMAIS stockés tels quels en base (DeploymentStatus n'a que
+// QUEUED/RUNNING/SUCCESS/FAILED) — ce sont des messages WebSocket éphémères.
+// On les regroupe ici pour un affichage cohérent : les phases de travail
+// actif affichent "running", les phases post-échec (diagnosing/diagnosed)
+// restent affichées comme "failed" pour ne pas faire clignoter le badge.
+const RAW_TO_DISPLAY_STATUS = {
+  queued: "queued",
+  running: "running",
+  cloning: "running",
+  analyzing: "running",
+  building: "running",
+  success: "success",
+  failed: "failed",
+  diagnosing: "failed",
+  diagnosed: "failed",
+};
+
+// Phases où on considère le déploiement "en cours de travail actif" (point
+// pulsant sur le badge). Ne couvre volontairement pas diagnosing/diagnosed :
+// une fois "failed" atteint, le badge se fige, et c'est le panneau
+// DiagnosisPreview qui affiche sa propre indication de progression.
+const ACTIVE_WORK_STATUSES = ["queued", "running", "cloning", "analyzing", "building"];
+
 function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) {
-  // On ne s'abonne au WS que si le statut connu (initial) est actif.
-  const shouldListen = deployment.status === "queued" || deployment.status === "running";
+  const shouldListen =
+    deployment.status === "queued" ||
+    deployment.status === "running" ||
+    deployment.status === "failed";
   const { status: liveStatus, message: liveMessage, logs: liveLogs } = useDeploymentStatus(
     shouldListen ? deployment.id : null
   );
 
-  // Le statut affiché priorise le live, mais retombe toujours sur la donnée
-  // fraîchement re-fetchée (deployment.status) — donc "isLive" se remet bien
-  // à jour même si le WS n'a jamais rien reçu.
-  const displayStatus = liveStatus || deployment.status;
-  const isLive = displayStatus === "queued" || displayStatus === "running";
+  const rawStatus = liveStatus || deployment.status;
+  const displayStatus = RAW_TO_DISPLAY_STATUS[rawStatus] || rawStatus;
+
+  const isLive = ACTIVE_WORK_STATUSES.includes(rawStatus);
   const displayLabel = isLive && liveMessage ? liveMessage : getStatusLabel(displayStatus);
 
+  // Priorité aux logs reçus en direct dès qu'il y en a, quelle que soit la
+  // phase exacte — c'est ce qui permet de suivre le build en temps réel au
+  // lieu d'attendre le résultat final tout d'un coup.
   const displayLogs =
-    isLive && liveLogs && liveLogs.length > 0
+    liveLogs && liveLogs.length > 0
       ? liveLogs.join("\n")
       : deployment.logs || "Aucun log disponible.";
 
@@ -108,7 +178,12 @@ function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) 
           </div>
 
           {displayStatus === "failed" && (
-            <DiagnosisPreview deploymentId={deployment.id} navigate={navigate} />
+            <DiagnosisPreview
+              deploymentId={deployment.id}
+              navigate={navigate}
+              liveDiagnosisStatus={liveStatus}
+              liveDiagnosisMessage={liveMessage}
+            />
           )}
         </>
       )}
@@ -146,10 +221,6 @@ function Deployments() {
       .finally(() => setLoading(false));
   }, [filter]);
 
-  // Filet de sécurité : tant qu'un déploiement est en cours, on re-synchronise
-  // périodiquement avec le backend (source de vérité en base) — au cas où
-  // l'événement WS final aurait été manqué (déploiement trop rapide,
-  // connexion pas encore ouverte, coupure réseau, etc.)
   useEffect(() => {
     const hasActive = deployments.some(
       (d) => d.status === "queued" || d.status === "running"

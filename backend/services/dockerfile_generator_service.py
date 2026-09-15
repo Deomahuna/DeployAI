@@ -9,6 +9,7 @@ TEMPLATE_BY_LANGUAGE = {
     "node": "node.dockerfile.j2",
     "node-static": "node_static.dockerfile.j2",
     "python": "python.dockerfile.j2",
+    "php": "php.dockerfile.j2",
     "static": "static.dockerfile.j2",
 }
 
@@ -39,9 +40,27 @@ def write_dockerfile(repo_path: str, content: str) -> str:
     return dockerfile_path
 
 
-
-
-
-def generate_node_static_dockerfile(version: str, install_cmd: str, build_cmd: str, output_dir: str) -> str:
+def generate_node_static_dockerfile(
+    version: str,
+    install_cmd: str,
+    build_cmd: str,
+    output_dir: str,
+    build_arg_keys: list[str] | None = None,
+) -> str:
+    """
+    build_arg_keys : noms (pas les valeurs) des variables d'environnement du
+    projet à déclarer comme ARG/ENV dans l'étape de build du Dockerfile
+    multi-stage généré. Nécessaire pour qu'un frontend statique (React/Vite/
+    Vue) puisse lire ces variables PENDANT `npm run build` — un site déjà
+    buildé en fichiers statiques ne peut plus les lire au runtime, une fois
+    servi par nginx. Les valeurs réelles sont fournies séparément via
+    `buildargs` au moment de `docker build` (voir docker_service.build_and_run).
+    """
     template = env.get_template("node_static.dockerfile.j2")
-    return template.render(version=version, install_cmd=install_cmd, build_cmd=build_cmd, output_dir=output_dir)
+    return template.render(
+        version=version,
+        install_cmd=install_cmd,
+        build_cmd=build_cmd,
+        output_dir=output_dir,
+        build_arg_keys=build_arg_keys or [],
+    )

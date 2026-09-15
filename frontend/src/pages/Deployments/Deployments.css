@@ -236,3 +236,11 @@
 .deployment-preview-link:hover {
   background: rgba(52, 199, 89, 0.2);
 }
+
+.diagnosis-pending .diagnosis-cause {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-style: italic;
+}

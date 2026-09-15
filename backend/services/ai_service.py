@@ -5,6 +5,9 @@ et produire une cause, une sévérité, un score de confiance et des solutions.
 Un fallback heuristique garantit qu'un diagnostic existe toujours, même sans
 clé API ou en cas de quota dépassé — un déploiement échoué n'est jamais bloqué
 par un souci côté IA.
+
+Migré vers le SDK `google-genai` (le package `google.generativeai` est
+déprécié et ne reçoit plus de mises à jour).
 """
 
 import json
@@ -12,15 +15,17 @@ import logging
 import os
 from typing import Optional
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+_client: Optional[genai.Client] = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    _client = genai.Client(api_key=GEMINI_API_KEY)
 
 DIAGNOSTIC_PROMPT = """Tu es un expert DevOps qui analyse les erreurs de déploiement d'applications web.
 
@@ -128,27 +133,39 @@ def analyze_deployment_error(
     Retourne toujours un dict {cause, severity, confidence, solutions} —
     soit via Gemini, soit via le fallback heuristique.
     """
-    if not GEMINI_API_KEY:
+    if not _client:
         logger.warning("GEMINI_API_KEY absente, utilisation du fallback heuristique.")
         return _fallback_diagnostic(error_message)
 
     try:
-        model = genai.GenerativeModel(GEMINI_MODEL)
         prompt = DIAGNOSTIC_PROMPT.format(
             error_message=(error_message or "")[:2000],
             logs=(logs or "")[-4000:],
             language=language or "inconnu",
             framework=framework or "inconnu",
         )
-        response = model.generate_content(
-            prompt,
-            generation_config={"temperature": 0.2, "max_output_tokens": 500},
+        response = _client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                max_output_tokens=2048,
+            ),
         )
-        parsed = _parse_ai_response(response.text)
+
+        raw_text = response.text or ""
+        if not raw_text.strip():
+            logger.warning(
+                "Réponse Gemini vide (finish_reason=%s), fallback heuristique.",
+                getattr(response.candidates[0], "finish_reason", "inconnu") if response.candidates else "aucun candidat",
+            )
+            return _fallback_diagnostic(error_message)
+
+        parsed = _parse_ai_response(raw_text)
         if parsed:
             return parsed
         return _fallback_diagnostic(error_message)
 
     except Exception as e:
-        logger.error(f"Erreur appel Gemini pour diagnostic IA : {e}")
+        logger.error(f"Erreur appel Gemini pour diagnostic IA : {type(e).__name__}: {e}")
         return _fallback_diagnostic(error_message)

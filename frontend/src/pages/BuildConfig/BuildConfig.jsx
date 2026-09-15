@@ -9,6 +9,7 @@ import "./BuildConfig.css";
 const LANGUAGES = [
   { id: "node", label: "Node.js", defaultVersion: "20", defaultInstall: "npm install", defaultPort: 3000 },
   { id: "python", label: "Python", defaultVersion: "3.11", defaultInstall: "pip install -r requirements.txt", defaultPort: 8000 },
+  { id: "php", label: "PHP", defaultVersion: "8.3", defaultInstall: "composer install --no-interaction --prefer-dist", defaultPort: 8000 },
   { id: "static", label: "Site statique (HTML/CSS/JS)", defaultVersion: "", defaultInstall: "", defaultPort: 80 },
 ];
 
@@ -19,6 +20,13 @@ function BuildConfig() {
 
   const [loading, setLoading] = useState(true);
   const [strategy, setStrategy] = useState(null);
+
+  // Deux modes : "generate" (langage + commandes -> Dockerfile généré),
+  // "custom" (l'utilisateur a déjà son propre Dockerfile dans le dépôt, on
+  // se contente d'en pointer le chemin, rien n'est généré).
+  const [mode, setMode] = useState("generate");
+  const [dockerfilePath, setDockerfilePath] = useState("");
+
   const [language, setLanguage] = useState("node");
   const [version, setVersion] = useState("20");
   const [installCmd, setInstallCmd] = useState("npm install");
@@ -31,6 +39,10 @@ function BuildConfig() {
     getBuildConfig(id)
       .then((config) => {
         setStrategy(config.strategy);
+        if (config.dockerfile_path) {
+          setMode("custom");
+          setDockerfilePath(config.dockerfile_path);
+        }
         if (config.language) setLanguage(config.language);
         if (config.version) setVersion(config.version);
         if (config.install_cmd) setInstallCmd(config.install_cmd);
@@ -50,19 +62,33 @@ function BuildConfig() {
   };
 
   const handleSaveAndDeploy = async () => {
-    if (language !== "static" && !startCmd.trim()) {
+    if (mode === "custom") {
+      if (!dockerfilePath.trim()) {
+        toast.error("Indique le chemin de ton Dockerfile (ex: Dockerfile, backend/Dockerfile).");
+        return;
+      }
+    } else if (language !== "static" && !startCmd.trim()) {
       toast.error("Indique la commande de démarrage.");
       return;
     }
+
     setSaving(true);
     try {
-      await updateBuildConfig(id, {
-        language,
-        version,
-        install_cmd: installCmd,
-        start_cmd: startCmd,
-        port: Number(port),
-      });
+      if (mode === "custom") {
+        await updateBuildConfig(id, { dockerfile_path: dockerfilePath.trim() });
+      } else {
+        await updateBuildConfig(id, {
+          language,
+          version,
+          install_cmd: installCmd,
+          start_cmd: startCmd,
+          port: Number(port),
+          // Explicitement à null : si le projet avait précédemment un
+          // dockerfile_path personnalisé enregistré, on revient bien au
+          // mode génération automatique au lieu de le laisser traîner.
+          dockerfile_path: null,
+        });
+      }
       setSaving(false);
       setDeploying(true);
       await deployProject(id);
@@ -95,50 +121,84 @@ function BuildConfig() {
       </header>
 
       <div className="build-config-body">
-        <p className="build-config-section-label">1. Langage / runtime</p>
-        <div className="language-grid">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.id}
-              className={language === lang.id ? "language-card active" : "language-card"}
-              onClick={() => handleLanguageChange(lang.id)}
-            >
-              {lang.label}
-            </button>
-          ))}
+        <p className="build-config-section-label">Mode de configuration</p>
+        <div className="mode-toggle">
+          <button
+            className={mode === "generate" ? "mode-btn active" : "mode-btn"}
+            onClick={() => setMode("generate")}
+          >
+            Générer à partir d'un langage
+          </button>
+          <button
+            className={mode === "custom" ? "mode-btn active" : "mode-btn"}
+            onClick={() => setMode("custom")}
+          >
+            J'ai déjà mon propre Dockerfile
+          </button>
         </div>
 
-        {language !== "static" && (
+        {mode === "custom" ? (
           <>
-            <p className="build-config-section-label">2. Version</p>
+            <p className="build-config-section-label">Chemin du Dockerfile dans le dépôt</p>
             <input
               type="text"
-              value={version}
-              onChange={(e) => setVersion(e.target.value)}
-              placeholder={language === "node" ? "20" : "3.11"}
+              value={dockerfilePath}
+              onChange={(e) => setDockerfilePath(e.target.value)}
+              placeholder="Dockerfile, backend/Dockerfile, docker/Dockerfile.prod..."
             />
+            <p className="build-config-hint">
+              Chemin relatif depuis la racine du dépôt (ou du sous-dossier configuré pour ce
+              projet). Le fichier doit déjà exister dans ton dépôt — rien n'est généré dans ce mode.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="build-config-section-label">1. Langage / runtime</p>
+            <div className="language-grid">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.id}
+                  className={language === lang.id ? "language-card active" : "language-card"}
+                  onClick={() => handleLanguageChange(lang.id)}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
 
-            <p className="build-config-section-label">3. Commande d'installation des dépendances</p>
-            <input
-              type="text"
-              value={installCmd}
-              onChange={(e) => setInstallCmd(e.target.value)}
-            />
+            {language !== "static" && (
+              <>
+                <p className="build-config-section-label">2. Version</p>
+                <input
+                  type="text"
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  placeholder={language === "node" ? "20" : "3.11"}
+                />
 
-            <p className="build-config-section-label">4. Commande de démarrage</p>
-            <input
-              type="text"
-              value={startCmd}
-              onChange={(e) => setStartCmd(e.target.value)}
-              placeholder={language === "node" ? "npm start" : "python app.py"}
-            />
+                <p className="build-config-section-label">3. Commande d'installation des dépendances</p>
+                <input
+                  type="text"
+                  value={installCmd}
+                  onChange={(e) => setInstallCmd(e.target.value)}
+                />
 
-            <p className="build-config-section-label">5. Port d'écoute de l'application</p>
-            <input
-              type="number"
-              value={port}
-              onChange={(e) => setPort(e.target.value)}
-            />
+                <p className="build-config-section-label">4. Commande de démarrage</p>
+                <input
+                  type="text"
+                  value={startCmd}
+                  onChange={(e) => setStartCmd(e.target.value)}
+                  placeholder={language === "node" ? "npm start" : "python app.py"}
+                />
+
+                <p className="build-config-section-label">5. Port d'écoute de l'application</p>
+                <input
+                  type="number"
+                  value={port}
+                  onChange={(e) => setPort(e.target.value)}
+                />
+              </>
+            )}
           </>
         )}
 

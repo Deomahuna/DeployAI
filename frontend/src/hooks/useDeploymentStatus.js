@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../services/api";
 
-const TERMINAL_STATUSES = ["success", "failed"];
+// "failed" n'est volontairement PAS ici : le backend enchaîne toujours
+// "failed" -> "diagnosing" -> "diagnosed" pour un déploiement raté. Fermer
+// le socket dès "failed" empêchait de recevoir "diagnosing"/"diagnosed",
+// donc l'UI ne montrait jamais l'état "diagnostic en cours" et le
+// diagnostic ne semblait apparaître que par un fetch REST séparé, en
+// silence, une fois prêt.
+const WS_CLOSING_STATUSES = ["success", "diagnosed"];
 
 export function useDeploymentStatus(deploymentId) {
   const [status, setStatus] = useState(null);
@@ -29,7 +35,7 @@ export function useDeploymentStatus(deploymentId) {
       setStatus(data.status);
       setMessage(data.message);
 
-      if (TERMINAL_STATUSES.includes(data.status)) {
+      if (WS_CLOSING_STATUSES.includes(data.status)) {
         socket.close();
       }
     };

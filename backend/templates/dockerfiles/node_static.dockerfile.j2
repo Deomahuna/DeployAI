@@ -1,5 +1,9 @@
 FROM node:{{ version }}-alpine AS build
 WORKDIR /app
+{% for key in build_arg_keys %}
+ARG {{ key }}
+ENV {{ key }}=${{ key }}
+{% endfor %}
 COPY . .
 RUN {{ install_cmd }}
 RUN {{ build_cmd }}

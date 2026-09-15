@@ -24,6 +24,7 @@ class BuildStrategy(str, enum.Enum):
     GENERATED_NODE = "generated_node"
     GENERATED_NODE_STATIC = "generated_node_static"
     GENERATED_PYTHON = "generated_python"
+    GENERATED_PHP = "generated_php"
     GENERATED_STATIC = "generated_static"
     MANUAL = "manual"
     UNDETECTED = "undetected"

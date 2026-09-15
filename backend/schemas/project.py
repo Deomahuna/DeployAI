@@ -77,3 +77,9 @@ class BuildConfigUpdate(BaseModel):
     install_cmd: Optional[str] = None
     start_cmd: Optional[str] = None
     port: Optional[int] = None
+    # Chemin relatif vers un Dockerfile déjà présent dans le dépôt de
+    # l'utilisateur (ex: "backend/Dockerfile", "docker/Dockerfile.prod").
+    # Si renseigné, aucune génération de Dockerfile n'a lieu : celui-ci est
+    # utilisé tel quel. Envoyer explicitement `null` permet de revenir au
+    # mode "génération à partir du langage/commandes".
+    dockerfile_path: Optional[str] = None

@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import stat
@@ -21,6 +22,8 @@ from core.exceptions import DeploymentError, NotFoundError
 import tempfile
 
 CLONE_DIR = os.path.join(tempfile.gettempdir(), "deployai_workspace")
+
+logger = logging.getLogger(__name__)
 
 
 def _remove_readonly(func, path, exc_info):
@@ -47,6 +50,43 @@ def _rmtree_with_retry(path: str, attempts: int = 5, delay: float = 0.4) -> None
             time.sleep(delay * (attempt + 1))
 
 
+def _git_clone_with_retry(branch: str, repo_url: str, dest: str, retries: int = 3, timeout: int = 30, backoff: float = 2.0):
+    """
+    Clone avec retry : le réseau de la machine de build semble sujet à des
+    coupures intermittentes (timeouts vers github.com). On retente plusieurs
+    fois avec un backoff progressif, et on borne chaque tentative avec un
+    timeout explicite pour ne pas rester bloqué indéfiniment si git ne
+    remonte pas d'erreur clairement.
+    """
+    last_result = None
+    for attempt in range(retries):
+        try:
+            result = subprocess.run(
+                ["git", "clone", "--depth", "1", "--branch", branch, repo_url, dest],
+                capture_output=True, text=True, timeout=timeout,
+            )
+            if result.returncode == 0:
+                return result
+            last_result = result
+        except subprocess.TimeoutExpired:
+            last_result = None
+
+        if os.path.exists(dest):
+            _rmtree_with_retry(dest)
+        if attempt < retries - 1:
+            time.sleep(backoff * (attempt + 1))
+
+    if last_result is not None:
+        raise DeploymentError(
+            f"Échec du clonage du dépôt (branche '{branch}') après {retries} tentatives : "
+            f"{last_result.stderr.strip()}"
+        )
+    raise DeploymentError(
+        f"Échec du clonage du dépôt (branche '{branch}') après {retries} tentatives : "
+        f"délai dépassé à chaque essai (timeout réseau vers GitHub/GitLab)."
+    )
+
+
 def _prepare_source(project: Project) -> str:
     dest = os.path.join(CLONE_DIR, f"project_{project.id}")
     if os.path.exists(dest):
@@ -55,12 +95,7 @@ def _prepare_source(project: Project) -> str:
 
     if project.repo_url:
         branch = project.branch or "main"
-        result = subprocess.run(
-            ["git", "clone", "--depth", "1", "--branch", branch, project.repo_url, dest],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            raise DeploymentError(f"Échec du clonage du dépôt (branche '{branch}') : {result.stderr.strip()}")
+        _git_clone_with_retry(branch, project.repo_url, dest)
 
         if project.subdirectory:
             target = os.path.join(dest, project.subdirectory.strip("/"))
@@ -136,17 +171,28 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
         realtime_service.publish_deployment_event(deployment.id, "cloning", "Récupération du code source...")
         repo_path = _prepare_source(project)
 
+        # Calculé ICI, avant la génération/régénération du Dockerfile : un
+        # frontend statique généré (React/Vite/Vue) a besoin de connaître ces
+        # noms de variables pour les déclarer en ARG/ENV dans son Dockerfile,
+        # afin de pouvoir les lire PENDANT `npm run build` (elles ne seront
+        # plus lisibles une fois le site figé en fichiers statiques servis
+        # par nginx, contrairement à un vrai backend qui les lit au runtime).
+        env_vars = {v.key: decrypt_value(v.value_encrypted) for v in project.env_vars}
+        env_var_keys = list(env_vars.keys())
+
         if project.build_config and project.build_config.get("strategy") not in (None, BuildStrategy.UNDETECTED.value):
             build_config = project.build_config
-            if build_config["strategy"] in (BuildStrategy.GENERATED_NODE.value, BuildStrategy.GENERATED_PYTHON.value):
+            if build_config["strategy"] in (BuildStrategy.GENERATED_NODE.value, BuildStrategy.GENERATED_PYTHON.value, BuildStrategy.GENERATED_PHP.value):
                 build_strategy_service.regenerate_dockerfile(repo_path, build_config)
             elif build_config["strategy"] == BuildStrategy.GENERATED_NODE_STATIC.value:
-                build_strategy_service.regenerate_node_static_dockerfile(repo_path, build_config)
+                build_strategy_service.regenerate_node_static_dockerfile(repo_path, build_config, env_var_keys=env_var_keys)
             elif build_config["strategy"] == BuildStrategy.GENERATED_STATIC.value:
                 build_strategy_service.write_static_dockerfile(repo_path)
+            elif build_config["strategy"] == BuildStrategy.MANUAL.value:
+                build_strategy_service.regenerate_manual_dockerfile(repo_path, build_config)
         else:
             realtime_service.publish_deployment_event(deployment.id, "analyzing", "Détection du type de projet...")
-            build_config = build_strategy_service.determine_strategy(repo_path)
+            build_config = build_strategy_service.determine_strategy(repo_path, env_var_keys=env_var_keys)
             project.build_config = build_config
             project_repository.save(db, project)
 
@@ -157,12 +203,13 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
             )
 
         realtime_service.publish_deployment_event(deployment.id, "building", "Construction de l'image Docker...")
-        env_vars = {v.key: decrypt_value(v.value_encrypted) for v in project.env_vars}
 
         preview_urls: list[dict] = []
 
         if build_config["strategy"] == BuildStrategy.DOCKER_COMPOSE.value:
-            build_logs = docker_service.build_and_run_compose(repo_path, project_name=f"deployai-{project.id}")
+            build_logs = docker_service.build_and_run_compose(
+                repo_path, project_name=f"deployai-{project.id}", env_vars=env_vars
+            )
             client = docker_service.get_docker_client(project.server)
             port_mappings = docker_service.get_compose_port_mappings(client, project_name=f"deployai-{project.id}")
             preview_urls = _build_preview_urls(project.server, port_mappings)
@@ -181,6 +228,7 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
                 env_vars=env_vars,
                 dockerfile=dockerfile_name,
                 on_log=_on_log,
+                build_args=env_vars,
             )
             preview_urls = _build_preview_urls(project.server, port_mappings)
 
@@ -199,8 +247,16 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
         return deployment
 
     except Exception as exc:
+        # docker_service attache les logs de build accumulés jusqu'au point
+        # d'échec sur l'exception elle-même (attribut .logs), car build_logs
+        # (la variable locale) ne reçoit sa valeur qu'au `return` normal de
+        # build_and_run/build_and_run_compose — qui n'est jamais atteint en
+        # cas d'erreur. On récupère donc en priorité les logs attachés à
+        # l'exception, avec build_logs comme filet de sécurité.
+        captured_logs = getattr(exc, "logs", None) or build_logs
+
         deployment.status = DeploymentStatus.FAILED
-        deployment.logs = str(exc)
+        deployment.logs = captured_logs or str(exc)
         project.status = ProjectStatus.FAILED
         deployment.duration_seconds = int(time.time() - started)
         deployment.finished_at = datetime.utcnow()
@@ -209,8 +265,25 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
 
         realtime_service.publish_deployment_event(deployment.id, "failed", str(exc))
         realtime_service.publish_deployment_event(deployment.id, "diagnosing", "Analyse de l'erreur par l'IA...")
-        _create_diagnostic(db, deployment, project, str(exc), build_logs)
-        realtime_service.publish_deployment_event(deployment.id, "diagnosed", "Diagnostic IA prêt.")
+
+        # _create_diagnostic ne doit JAMAIS pouvoir faire remonter une exception
+        # non gérée ici : on serait déjà dans le except du déploiement, donc une
+        # exception ici serait avalée silencieusement par Celery (voir
+        # tasks/deployment_tasks.py), laissant le déploiement en FAILED sans
+        # aucun diagnostic en base -> 404 sur /deployments/{id}/diagnosis alors
+        # que le frontend affiche parfois un texte de fallback trompeur.
+        try:
+            _create_diagnostic(db, deployment, project, str(exc), captured_logs)
+            realtime_service.publish_deployment_event(deployment.id, "diagnosed", "Diagnostic IA prêt.")
+        except Exception:
+            logger.exception(
+                "Échec de la création du diagnostic pour le déploiement %s", deployment.id
+            )
+            db.rollback()
+            _create_minimal_diagnostic_safely(db, deployment)
+            realtime_service.publish_deployment_event(
+                deployment.id, "diagnosed", "Diagnostic IA indisponible (voir logs serveur)."
+            )
 
         return deployment
 
@@ -231,6 +304,32 @@ def _create_diagnostic(db: Session, deployment: Deployment, project: Project, er
         solutions=result["solutions"],
     )
     return deployment_repository.create_diagnostic(db, diagnostic)
+
+
+def _create_minimal_diagnostic_safely(db: Session, deployment: Deployment) -> Diagnostic | None:
+    """
+    Dernier filet de sécurité : après un échec de _create_diagnostic (quelle
+    qu'en soit la cause : Gemini, enum invalide, erreur DB...), on tente
+    d'insérer un diagnostic minimal codé en dur, pour qu'un GET
+    /deployments/{id}/diagnosis ne renvoie plus jamais 404 après un échec de
+    déploiement. Si même ça échoue, on logue et on abandonne proprement sans
+    faire planter le reste du flux.
+    """
+    try:
+        diagnostic = Diagnostic(
+            deployment_id=deployment.id,
+            cause="Le diagnostic automatique a échoué. Consulte les logs du déploiement et du serveur.",
+            severity=DiagnosticSeverity.MEDIUM,
+            confidence=0.0,
+            solutions=[{"title": "Vérifier les logs du déploiement et du worker", "command": None}],
+        )
+        return deployment_repository.create_diagnostic(db, diagnostic)
+    except Exception:
+        logger.exception(
+            "Échec même du diagnostic minimal de secours pour le déploiement %s", deployment.id
+        )
+        db.rollback()
+        return None
 
 
 def list_deployments(db: Session, current_user: User, project_id: int | None) -> list[Deployment]:
