@@ -1,0 +1,77 @@
+.auth-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  padding: 0 32px;
+  background: rgba(11, 17, 32, 0.45);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.auth-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+}
+
+.auth-header-logo svg {
+  color: #93c5fd;
+}
+
+.auth-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 14px;
+}
+
+.auth-header-nav a:not(.btn) {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+
+.auth-header-nav a:not(.btn):hover {
+  color: #fff;
+}
+
+/* Boutons du header : plus compacts que ceux des formulaires */
+.auth-header .btn {
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+.auth-header .auth-header-ghost {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.auth-header .auth-header-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Le header est en position absolue : on décale le contenu pour que
+   la carte ne passe jamais dessous sur les petits écrans */
+div.login,
+div.register {
+  padding-top: 96px;
+}
+
+@media (max-width: 560px) {
+  .auth-header {
+    padding: 0 16px;
+  }
+  .auth-header-home {
+    display: none;
+  }
+}

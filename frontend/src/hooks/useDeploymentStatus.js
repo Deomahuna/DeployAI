@@ -41,7 +41,7 @@ export function useDeploymentStatus(deploymentId) {
     };
 
     socket.onerror = () => {
-      // Connexion échouée — les données déjà chargées via l'API restent affichées
+      // Connexion échouée - les données déjà chargées via l'API restent affichées
     };
 
     return () => socket.close();

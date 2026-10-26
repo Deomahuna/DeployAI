@@ -19,6 +19,7 @@ import Deployments from "./pages/Deployments/Deployments.jsx";
 import Diagnostics from "./pages/Diagnostics/Diagnostics.jsx";
 import Settings from "./pages/Settings/Settings.jsx";
 import BuildConfig from "./pages/BuildConfig/BuildConfig.jsx";
+import NotFound from "./pages/NotFound/NotFound.jsx";
 
 function App() {
     return (
@@ -48,6 +49,8 @@ function App() {
                 <Route path="/projects/:id/build-config" element={<BuildConfig />} />
                 <Route path="/settings" element={<Settings />} />
             </Route>
+
+            <Route path="*" element={<NotFound />} />
 
         </Routes>
     );

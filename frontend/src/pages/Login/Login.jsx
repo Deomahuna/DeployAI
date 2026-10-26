@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiBox, FiEye, FiEyeOff, FiGithub, FiGitlab } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiGithub, FiGitlab } from "react-icons/fi";
 import { login, saveToken, startGithubLogin, startGitlabLogin } from "../../services/authService.js";
 import { useToast } from "../../context/ToastContext.jsx";
 import "./Login.css";
+import AuthBackground from "../../components/AuthBackground/AuthBackground.jsx";
+import AuthHeader from "../../components/AuthHeader/AuthHeader.jsx";
 
 function Login() {
   const navigate = useNavigate();
@@ -26,10 +28,8 @@ function Login() {
 
   return (
     <div className="login">
-      <Link to="/" className="login-logo">
-        <FiBox size={22} />
-        <span>DeployAI</span>
-      </Link>
+      <AuthBackground />
+      <AuthHeader page="login" />
 
       <div className="login-card">
         <p className="login-title">Connexion</p>

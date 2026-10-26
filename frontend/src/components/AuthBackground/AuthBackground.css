@@ -1,0 +1,55 @@
+.login,
+.register {
+  position: relative;
+  isolation: isolate;
+}
+
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: #0b1120;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Voile sombre teinté : le formulaire reste lisible quelle que soit la photo */
+.auth-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 17, 32, 0.7), rgba(11, 17, 32, 0.9)),
+    linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(124, 58, 237, 0.2));
+}
+
+/* Fond de secours quand aucune image n'est présente */
+.auth-bg-plain {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.5), transparent 55%),
+    radial-gradient(circle at 90% 95%, rgba(124, 58, 237, 0.4), transparent 50%);
+  background-size: 40px 40px, 40px 40px, auto, auto;
+}
+.auth-bg-plain::after {
+  display: none;
+}
+
+/* Le fond est toujours sombre : logo en clair */
+.auth-bg ~ .login-logo,
+.auth-bg ~ .register-logo {
+  color: #fff;
+}
+.auth-bg ~ .login-logo svg,
+.auth-bg ~ .register-logo svg {
+  color: #93c5fd;
+}
+
+/* Carte légèrement translucide */
+.auth-bg ~ .login-card,
+.auth-bg ~ .register-card {
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(10px);
+}

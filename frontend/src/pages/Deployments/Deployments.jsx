@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FiChevronRight, FiChevronDown, FiCpu, FiExternalLink } from "react-icons/fi";
-import { listDeployments, getDiagnosis } from "../../services/deploymentService.js";
+import {
+  FiChevronRight,
+  FiChevronDown,
+  FiCpu,
+  FiExternalLink,
+} from "react-icons/fi";
+import {
+  listDeployments,
+  getDiagnosis,
+} from "../../services/deploymentService.js";
 import { listProjects } from "../../services/projectService.js";
 import { getStatusLabel } from "../../constants/status.js";
 import { useDeploymentStatus } from "../../hooks/useDeploymentStatus.js";
@@ -10,7 +18,12 @@ import "./Deployments.css";
 
 const TERMINAL_STATUSES = ["success", "failed"];
 
-function DiagnosisPreview({ deploymentId, navigate, liveDiagnosisStatus, liveDiagnosisMessage }) {
+function DiagnosisPreview({
+  deploymentId,
+  navigate,
+  liveDiagnosisStatus,
+  liveDiagnosisMessage,
+}) {
   const [diagnosis, setDiagnosis] = useState(null);
   const [attempted, setAttempted] = useState(false);
 
@@ -29,11 +42,14 @@ function DiagnosisPreview({ deploymentId, navigate, liveDiagnosisStatus, liveDia
   // en direct pendant que la page est ouverte.
   useEffect(() => {
     if (liveDiagnosisStatus === "diagnosed") {
-      getDiagnosis(deploymentId).then(setDiagnosis).catch(() => {});
+      getDiagnosis(deploymentId)
+        .then(setDiagnosis)
+        .catch(() => {});
     }
   }, [liveDiagnosisStatus, deploymentId]);
 
-  const isDiagnosing = liveDiagnosisStatus === "failed" || liveDiagnosisStatus === "diagnosing";
+  const isDiagnosing =
+    liveDiagnosisStatus === "failed" || liveDiagnosisStatus === "diagnosing";
 
   if (!diagnosis && isDiagnosing) {
     return (
@@ -52,7 +68,7 @@ function DiagnosisPreview({ deploymentId, navigate, liveDiagnosisStatus, liveDia
 
   if (!diagnosis) {
     // Pas de flux live (déploiement historique) et le fetch initial n'a
-    // encore rien trouvé — on n'affiche rien tant qu'on n'a pas au moins
+    // encore rien trouvé - on n'affiche rien tant qu'on n'a pas au moins
     // essayé une fois, pour éviter un flash vide inutile.
     if (!attempted) return null;
     return null;
@@ -63,10 +79,15 @@ function DiagnosisPreview({ deploymentId, navigate, liveDiagnosisStatus, liveDia
       <div className="diagnosis-preview-header">
         <FiCpu size={15} />
         <span>Diagnostic IA</span>
-        <span className="confidence-tag">{Math.round(diagnosis.confidence * 100)}% confiance</span>
+        <span className="confidence-tag">
+          {Math.round(diagnosis.confidence * 100)}% confiance
+        </span>
       </div>
       <p className="diagnosis-cause">{diagnosis.cause}</p>
-      <button className="btn btn-ai" onClick={() => navigate(`/diagnostics?deployment=${deploymentId}`)}>
+      <button
+        className="btn btn-ai"
+        onClick={() => navigate(`/diagnostics?deployment=${deploymentId}`)}
+      >
         Voir le diagnostic complet
       </button>
     </div>
@@ -97,7 +118,7 @@ function PreviewLinks({ previewUrls }) {
 // Le backend passe par plusieurs sous-statuts transitoires pendant un
 // déploiement (cloning, analyzing, building, diagnosing, diagnosed) qui ne
 // sont JAMAIS stockés tels quels en base (DeploymentStatus n'a que
-// QUEUED/RUNNING/SUCCESS/FAILED) — ce sont des messages WebSocket éphémères.
+// QUEUED/RUNNING/SUCCESS/FAILED) - ce sont des messages WebSocket éphémères.
 // On les regroupe ici pour un affichage cohérent : les phases de travail
 // actif affichent "running", les phases post-échec (diagnosing/diagnosed)
 // restent affichées comme "failed" pour ne pas faire clignoter le badge.
@@ -117,25 +138,40 @@ const RAW_TO_DISPLAY_STATUS = {
 // pulsant sur le badge). Ne couvre volontairement pas diagnosing/diagnosed :
 // une fois "failed" atteint, le badge se fige, et c'est le panneau
 // DiagnosisPreview qui affiche sa propre indication de progression.
-const ACTIVE_WORK_STATUSES = ["queued", "running", "cloning", "analyzing", "building"];
+const ACTIVE_WORK_STATUSES = [
+  "queued",
+  "running",
+  "cloning",
+  "analyzing",
+  "building",
+];
 
-function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) {
+function DeploymentRow({
+  deployment,
+  projectName,
+  isOpen,
+  onToggle,
+  navigate,
+}) {
   const shouldListen =
     deployment.status === "queued" ||
     deployment.status === "running" ||
     deployment.status === "failed";
-  const { status: liveStatus, message: liveMessage, logs: liveLogs } = useDeploymentStatus(
-    shouldListen ? deployment.id : null
-  );
+  const {
+    status: liveStatus,
+    message: liveMessage,
+    logs: liveLogs,
+  } = useDeploymentStatus(shouldListen ? deployment.id : null);
 
   const rawStatus = liveStatus || deployment.status;
   const displayStatus = RAW_TO_DISPLAY_STATUS[rawStatus] || rawStatus;
 
   const isLive = ACTIVE_WORK_STATUSES.includes(rawStatus);
-  const displayLabel = isLive && liveMessage ? liveMessage : getStatusLabel(displayStatus);
+  const displayLabel =
+    isLive && liveMessage ? liveMessage : getStatusLabel(displayStatus);
 
   // Priorité aux logs reçus en direct dès qu'il y en a, quelle que soit la
-  // phase exacte — c'est ce qui permet de suivre le build en temps réel au
+  // phase exacte - c'est ce qui permet de suivre le build en temps réel au
   // lieu d'attendre le résultat final tout d'un coup.
   const displayLogs =
     liveLogs && liveLogs.length > 0
@@ -144,7 +180,10 @@ function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) 
 
   return (
     <div className={`deployment-row status-${displayStatus}`}>
-      <button className="deployment-summary" onClick={() => onToggle(deployment.id)}>
+      <button
+        className="deployment-summary"
+        onClick={() => onToggle(deployment.id)}
+      >
         <div className="deployment-summary-left">
           {isOpen ? <FiChevronDown size={15} /> : <FiChevronRight size={15} />}
           <span className="deployment-project">{projectName}</span>
@@ -155,7 +194,9 @@ function DeploymentRow({ deployment, projectName, isOpen, onToggle, navigate }) 
         </div>
         <div className="deployment-summary-right">
           <span>#{deployment.id}</span>
-          {deployment.duration_seconds != null && <span>{deployment.duration_seconds}s</span>}
+          {deployment.duration_seconds != null && (
+            <span>{deployment.duration_seconds}s</span>
+          )}
           <span>{new Date(deployment.started_at).toLocaleString()}</span>
         </div>
       </button>
@@ -200,7 +241,9 @@ function Deployments() {
   const [projects, setProjects] = useState([]);
   const [deployments, setDeployments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState(initialProjectId ? Number(initialProjectId) : "all");
+  const [filter, setFilter] = useState(
+    initialProjectId ? Number(initialProjectId) : "all",
+  );
   const [openId, setOpenId] = useState(null);
 
   useEffect(() => {
@@ -223,7 +266,7 @@ function Deployments() {
 
   useEffect(() => {
     const hasActive = deployments.some(
-      (d) => d.status === "queued" || d.status === "running"
+      (d) => d.status === "queued" || d.status === "running",
     );
     if (!hasActive) return;
 
@@ -249,7 +292,9 @@ function Deployments() {
     <div className="deployments">
       <header className="deployments-header">
         <p className="deployments-title">Déploiements</p>
-        <p className="deployments-subtitle">Historique complet de tous tes projets</p>
+        <p className="deployments-subtitle">
+          Historique complet de tous tes projets
+        </p>
       </header>
 
       <div className="deployments-body">
@@ -287,7 +332,9 @@ function Deployments() {
             ))}
 
             {deployments.length === 0 && (
-              <p className="deployments-empty">Aucun déploiement pour ce projet.</p>
+              <p className="deployments-empty">
+                Aucun déploiement pour ce projet.
+              </p>
             )}
           </div>
         )}

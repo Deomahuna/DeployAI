@@ -11,7 +11,7 @@ body,
   padding: 0;
 }
 
-/* Ne PAS mettre overflow: hidden sur body — ça casserait le scroll
+/* Ne PAS mettre overflow: hidden sur body - ça casserait le scroll
    normal des pages Home / Login / Register / ForgotPassword, qui
    ne sont pas dans MainLayout et doivent pouvoir scroller
    naturellement si leur contenu dépasse 100vh.

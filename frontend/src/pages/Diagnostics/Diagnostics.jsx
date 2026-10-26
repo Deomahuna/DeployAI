@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FiCpu, FiCopy, FiCheck } from "react-icons/fi";
-import { getDiagnosis, resolveDiagnostic, listDeployments } from "../../services/deploymentService.js";
+import {
+  getDiagnosis,
+  resolveDiagnostic,
+  listDeployments,
+} from "../../services/deploymentService.js";
 import { listProjects } from "../../services/projectService.js";
 import { useToast } from "../../context/ToastContext.jsx";
 import "./Diagnostics.css";
@@ -46,11 +50,15 @@ function Diagnostics() {
 
         if (current) {
           const project = projects.find((p) => p.id === current.project_id);
-          setProjectName(project ? project.name : `Projet #${current.project_id}`);
+          setProjectName(
+            project ? project.name : `Projet #${current.project_id}`,
+          );
         }
 
         setFailedDeployments(
-          deployments.filter((d) => d.status === "failed" && d.id !== deploymentId)
+          deployments.filter(
+            (d) => d.status === "failed" && d.id !== deploymentId,
+          ),
         );
 
         return getDiagnosis(deploymentId);
@@ -66,7 +74,7 @@ function Diagnostics() {
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 1500);
     } catch {
-      // Presse-papiers indisponible — on ignore silencieusement
+      // Presse-papiers indisponible - on ignore silencieusement
     }
   };
 
@@ -98,18 +106,32 @@ function Diagnostics() {
           <p className="diagnostics-title">Diagnostics IA</p>
         </header>
         <div className="diagnostics-body">
-          <p className="diagnostics-empty">Aucun diagnostic disponible pour ce déploiement.</p>
+          <p className="diagnostics-empty">
+            Aucun diagnostic disponible pour ce déploiement.
+          </p>
         </div>
       </div>
     );
   }
 
   const timeline = [
-    { label: "Déploiement lancé", time: deployment?.started_at, status: "done" },
+    {
+      label: "Déploiement lancé",
+      time: deployment?.started_at,
+      status: "done",
+    },
     { label: "Échec détecté", time: deployment?.finished_at, status: "error" },
-    { label: "Diagnostic IA généré", time: diagnostic.created_at, status: "done" },
+    {
+      label: "Diagnostic IA généré",
+      time: diagnostic.created_at,
+      status: "done",
+    },
     diagnostic.resolved
-      ? { label: "Corrigé et redéployé", time: diagnostic.resolved_at, status: "success" }
+      ? {
+          label: "Corrigé et redéployé",
+          time: diagnostic.resolved_at,
+          status: "success",
+        }
       : { label: "En attente de correction", time: null, status: "pending" },
   ];
 
@@ -131,7 +153,8 @@ function Diagnostics() {
             </div>
             <div className="diagnosis-tags">
               <span className={`tag-severity severity-${diagnostic.severity}`}>
-                Gravité : {severityLabels[diagnostic.severity] || diagnostic.severity}
+                Gravité :{" "}
+                {severityLabels[diagnostic.severity] || diagnostic.severity}
               </span>
               <span className="tag-confidence">
                 {Math.round(diagnostic.confidence * 100)}% confiance
@@ -139,7 +162,9 @@ function Diagnostics() {
             </div>
           </div>
 
-          <div className="error-block">{deployment?.logs || "Erreur non disponible."}</div>
+          <div className="error-block">
+            {deployment?.logs || "Erreur non disponible."}
+          </div>
 
           <p className="section-label">Cause probable</p>
           <p className="cause-text">{diagnostic.cause}</p>
@@ -158,7 +183,11 @@ function Diagnostics() {
                     onClick={() => handleCopy(s.command, i)}
                     aria-label="Copier la commande"
                   >
-                    {copiedIndex === i ? <FiCheck size={16} /> : <FiCopy size={16} />}
+                    {copiedIndex === i ? (
+                      <FiCheck size={16} />
+                    ) : (
+                      <FiCopy size={16} />
+                    )}
                   </button>
                 )}
               </div>
@@ -167,12 +196,20 @@ function Diagnostics() {
 
           {!diagnostic.resolved && (
             <div className="diagnosis-actions">
-              <button className="btn btn-accent" onClick={handleResolve} disabled={resolving}>
-                {resolving ? "Redéploiement en cours..." : "Marquer comme résolu et redéployer"}
+              <button
+                className="btn btn-accent"
+                onClick={handleResolve}
+                disabled={resolving}
+              >
+                {resolving
+                  ? "Redéploiement en cours..."
+                  : "Marquer comme résolu et redéployer"}
               </button>
               <button
                 className="btn btn-outline"
-                onClick={() => navigate(`/deployments?project=${deployment?.project_id}`)}
+                onClick={() =>
+                  navigate(`/deployments?project=${deployment?.project_id}`)
+                }
               >
                 Voir les logs complets
               </button>
@@ -181,8 +218,12 @@ function Diagnostics() {
           {diagnostic.resolved && (
             <div className="resolved-banner">
               <FiCheck size={16} />
-              Résolu — le processus complet est visible dans la timeline ci-dessous
-              <button className="btn btn-outline btn-sm" onClick={() => navigate("/deployments")}>
+              Résolu - le processus complet est visible dans la timeline
+              ci-dessous
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => navigate("/deployments")}
+              >
                 Retour aux déploiements
               </button>
             </div>
@@ -191,7 +232,8 @@ function Diagnostics() {
 
         <div>
           <p className="section-title">
-            Processus jusqu'à {diagnostic.resolved ? "la résolution" : "maintenant"}
+            Processus jusqu'à{" "}
+            {diagnostic.resolved ? "la résolution" : "maintenant"}
           </p>
           <div className="timeline">
             {timeline.map((step, i) => (
@@ -200,7 +242,7 @@ function Diagnostics() {
                 <div className="timeline-content">
                   <p className="timeline-label">{step.label}</p>
                   <p className="timeline-time">
-                    {step.time ? new Date(step.time).toLocaleString() : "—"}
+                    {step.time ? new Date(step.time).toLocaleString() : "-"}
                   </p>
                 </div>
               </div>
@@ -227,7 +269,9 @@ function Diagnostics() {
               </button>
             ))}
             {failedDeployments.length === 0 && (
-              <p className="deployments-empty">Aucun autre déploiement en échec.</p>
+              <p className="deployments-empty">
+                Aucun autre déploiement en échec.
+              </p>
             )}
           </div>
         </div>

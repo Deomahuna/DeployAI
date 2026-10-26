@@ -11,8 +11,11 @@ function Toast({ message, type = "info", onClose }) {
   const Icon = icons[type] || FiInfo;
 
   return (
-    <div className={`toast toast-${type}`}>
-      <Icon size={18} />
+    <div
+      className={`toast toast-${type}`}
+      role={type === "error" ? "alert" : "status"}
+    >
+      <Icon size={18} className="toast-icon" />
       <span className="toast-message">{message}</span>
       <button className="toast-close" onClick={onClose} aria-label="Fermer">
         <FiX size={14} />

@@ -20,7 +20,13 @@ import { listRepos, listBranches } from "../../services/importService.js";
 
 import { useToast } from "../../context/ToastContext.jsx";
 import "./ImportRepository.css";
-import { analyzeRepo, importProject, importFromUrl, importFromArchive, deployProject } from "../../services/projectService.js";
+import {
+  analyzeRepo,
+  importProject,
+  importFromUrl,
+  importFromArchive,
+  deployProject,
+} from "../../services/projectService.js";
 
 function UrlImportForm({ onImported }) {
   const toast = useToast();
@@ -214,44 +220,44 @@ function ImportRepository() {
   };
 
   const handleSubdirChange = async (newSubdir) => {
-  setAnalyzing(true);
-  try {
-    const result = await analyzeRepo(
-      `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
-      selectedBranch,
-      newSubdir.trim() || null
-    );
-    setAnalysis(result);
-  } catch (err) {
-    toast.error(err.message);
-  } finally {
-    setAnalyzing(false);
-  }
-};
+    setAnalyzing(true);
+    try {
+      const result = await analyzeRepo(
+        `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
+        selectedBranch,
+        newSubdir.trim() || null,
+      );
+      setAnalysis(result);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
-const handleConfirmDeploy = async () => {
-  setDeploying(true);
-  try {
-    const project = await importProject({
-      name: selectedRepo.name,
-      repo_url: `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
-      provider: mode,
-      repo_id: selectedRepo.id,
-      language: analysis.language,
-      framework: analysis.framework,
-      dependencies_summary: analysis.dependencies_summary,
-      branch: selectedBranch,
-      subdirectory: subdirectory.trim() || null,
-    });
-    toast.success(`${project.name} importé, déploiement en cours...`);
-    await deployProject(project.id);
-    navigate(`/projects/${project.id}`);
-  } catch (err) {
-    toast.error(err.message);
-  } finally {
-    setDeploying(false);
-  }
-};
+  const handleConfirmDeploy = async () => {
+    setDeploying(true);
+    try {
+      const project = await importProject({
+        name: selectedRepo.name,
+        repo_url: `https://${mode === "github" ? "github.com" : "gitlab.com"}/${selectedRepo.full_name}`,
+        provider: mode,
+        repo_id: selectedRepo.id,
+        language: analysis.language,
+        framework: analysis.framework,
+        dependencies_summary: analysis.dependencies_summary,
+        branch: selectedBranch,
+        subdirectory: subdirectory.trim() || null,
+      });
+      toast.success(`${project.name} importé, déploiement en cours...`);
+      await deployProject(project.id);
+      navigate(`/projects/${project.id}`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeploying(false);
+    }
+  };
   const handleDirectImportSuccess = (project) => {
     navigate(`/projects/${project.id}`);
   };
@@ -376,7 +382,7 @@ const handleConfirmDeploy = async () => {
               <div className="analysis-card">
                 <div className="analysis-header">
                   <FiCpu size={17} />
-                  <span>Analyse automatique — {selectedRepo.name}</span>
+                  <span>Analyse automatique - {selectedRepo.name}</span>
                 </div>
 
                 {analyzing ? (
@@ -393,11 +399,11 @@ const handleConfirmDeploy = async () => {
                         </div>
                         <div>
                           <span>Framework</span>
-                          <p>{analysis.framework || "—"}</p>
+                          <p>{analysis.framework || "-"}</p>
                         </div>
                         <div>
                           <span>Dépendances</span>
-                          <p>{analysis.dependencies_summary || "—"}</p>
+                          <p>{analysis.dependencies_summary || "-"}</p>
                         </div>
                       </div>
 

@@ -1,16 +1,43 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiCpu, FiCheck } from "react-icons/fi";
-import { getBuildConfig, updateBuildConfig } from "../../services/buildConfigService.js";
+import {
+  getBuildConfig,
+  updateBuildConfig,
+} from "../../services/buildConfigService.js";
 import { deployProject } from "../../services/projectService.js";
 import { useToast } from "../../context/ToastContext.jsx";
 import "./BuildConfig.css";
 
 const LANGUAGES = [
-  { id: "node", label: "Node.js", defaultVersion: "20", defaultInstall: "npm install", defaultPort: 3000 },
-  { id: "python", label: "Python", defaultVersion: "3.11", defaultInstall: "pip install -r requirements.txt", defaultPort: 8000 },
-  { id: "php", label: "PHP", defaultVersion: "8.3", defaultInstall: "composer install --no-interaction --prefer-dist", defaultPort: 8000 },
-  { id: "static", label: "Site statique (HTML/CSS/JS)", defaultVersion: "", defaultInstall: "", defaultPort: 80 },
+  {
+    id: "node",
+    label: "Node.js",
+    defaultVersion: "20",
+    defaultInstall: "npm install",
+    defaultPort: 3000,
+  },
+  {
+    id: "python",
+    label: "Python",
+    defaultVersion: "3.11",
+    defaultInstall: "pip install -r requirements.txt",
+    defaultPort: 8000,
+  },
+  {
+    id: "php",
+    label: "PHP",
+    defaultVersion: "8.3",
+    defaultInstall: "composer install --no-interaction --prefer-dist",
+    defaultPort: 8000,
+  },
+  {
+    id: "static",
+    label: "Site statique (HTML/CSS/JS)",
+    defaultVersion: "",
+    defaultInstall: "",
+    defaultPort: 80,
+  },
 ];
 
 function BuildConfig() {
@@ -64,7 +91,9 @@ function BuildConfig() {
   const handleSaveAndDeploy = async () => {
     if (mode === "custom") {
       if (!dockerfilePath.trim()) {
-        toast.error("Indique le chemin de ton Dockerfile (ex: Dockerfile, backend/Dockerfile).");
+        toast.error(
+          "Indique le chemin de ton Dockerfile (ex: Dockerfile, backend/Dockerfile).",
+        );
         return;
       }
     } else if (language !== "static" && !startCmd.trim()) {
@@ -102,7 +131,12 @@ function BuildConfig() {
     }
   };
 
-  if (loading) return <div className="build-config"><p>Chargement...</p></div>;
+  if (loading)
+    return (
+      <div className="build-config">
+        <p>Chargement...</p>
+      </div>
+    );
 
   const isUndetected = strategy === "undetected";
 
@@ -114,7 +148,7 @@ function BuildConfig() {
           <p className="build-config-title">Configuration du déploiement</p>
           <p className="build-config-subtitle">
             {isUndetected
-              ? "Le type de projet n'a pas pu être détecté automatiquement — configure-le manuellement ci-dessous."
+              ? "Le type de projet n'a pas pu être détecté automatiquement - configure-le manuellement ci-dessous."
               : "Vérifie ou ajuste la configuration détectée avant de déployer."}
           </p>
         </div>
@@ -139,7 +173,9 @@ function BuildConfig() {
 
         {mode === "custom" ? (
           <>
-            <p className="build-config-section-label">Chemin du Dockerfile dans le dépôt</p>
+            <p className="build-config-section-label">
+              Chemin du Dockerfile dans le dépôt
+            </p>
             <input
               type="text"
               value={dockerfilePath}
@@ -147,8 +183,9 @@ function BuildConfig() {
               placeholder="Dockerfile, backend/Dockerfile, docker/Dockerfile.prod..."
             />
             <p className="build-config-hint">
-              Chemin relatif depuis la racine du dépôt (ou du sous-dossier configuré pour ce
-              projet). Le fichier doit déjà exister dans ton dépôt — rien n'est généré dans ce mode.
+              Chemin relatif depuis la racine du dépôt (ou du sous-dossier
+              configuré pour ce projet). Le fichier doit déjà exister dans ton
+              dépôt - rien n'est généré dans ce mode.
             </p>
           </>
         ) : (
@@ -158,7 +195,11 @@ function BuildConfig() {
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.id}
-                  className={language === lang.id ? "language-card active" : "language-card"}
+                  className={
+                    language === lang.id
+                      ? "language-card active"
+                      : "language-card"
+                  }
                   onClick={() => handleLanguageChange(lang.id)}
                 >
                   {lang.label}
@@ -176,22 +217,30 @@ function BuildConfig() {
                   placeholder={language === "node" ? "20" : "3.11"}
                 />
 
-                <p className="build-config-section-label">3. Commande d'installation des dépendances</p>
+                <p className="build-config-section-label">
+                  3. Commande d'installation des dépendances
+                </p>
                 <input
                   type="text"
                   value={installCmd}
                   onChange={(e) => setInstallCmd(e.target.value)}
                 />
 
-                <p className="build-config-section-label">4. Commande de démarrage</p>
+                <p className="build-config-section-label">
+                  4. Commande de démarrage
+                </p>
                 <input
                   type="text"
                   value={startCmd}
                   onChange={(e) => setStartCmd(e.target.value)}
-                  placeholder={language === "node" ? "npm start" : "python app.py"}
+                  placeholder={
+                    language === "node" ? "npm start" : "python app.py"
+                  }
                 />
 
-                <p className="build-config-section-label">5. Port d'écoute de l'application</p>
+                <p className="build-config-section-label">
+                  5. Port d'écoute de l'application
+                </p>
                 <input
                   type="number"
                   value={port}
@@ -208,7 +257,11 @@ function BuildConfig() {
           disabled={saving || deploying}
         >
           <FiCheck size={15} />
-          {saving ? "Enregistrement..." : deploying ? "Déploiement en cours..." : "Confirmer et déployer"}
+          {saving
+            ? "Enregistrement..."
+            : deploying
+              ? "Déploiement en cours..."
+              : "Confirmer et déployer"}
         </button>
       </div>
     </div>

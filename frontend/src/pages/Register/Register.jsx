@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiBox, FiEye, FiEyeOff, FiGithub, FiGitlab } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiGithub, FiGitlab } from "react-icons/fi";
 import { register, startGithubLogin, startGitlabLogin } from "../../services/authService.js";
 import { useToast } from "../../context/ToastContext.jsx";
 import "./Register.css";
+import AuthBackground from "../../components/AuthBackground/AuthBackground.jsx";
+import AuthHeader from "../../components/AuthHeader/AuthHeader.jsx";
 
 function getPasswordStrength(password) {
   let score = 0;
@@ -46,10 +48,8 @@ function Register() {
 
   return (
     <div className="register">
-      <Link to="/" className="register-logo">
-        <FiBox size={22} />
-        <span>DeployAI</span>
-      </Link>
+      <AuthBackground />
+      <AuthHeader page="register" />
 
       <div className="register-card">
         <p className="register-title">Créer un compte</p>

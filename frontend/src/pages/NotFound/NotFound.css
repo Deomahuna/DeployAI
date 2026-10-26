@@ -1,0 +1,85 @@
+.notfound {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+.notfound-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notfound-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--text-h);
+  text-decoration: none;
+}
+
+.notfound-logo svg {
+  color: var(--accent);
+}
+
+.notfound-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.notfound-code {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(64px, 14vw, 112px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.notfound-main h1 {
+  margin: 20px 0 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.notfound-text {
+  margin: 12px 0 28px;
+  max-width: 420px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.notfound-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.notfound-links {
+  margin: 32px 0 0;
+  font-size: 13px;
+}
+
+.notfound-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.notfound-links a:hover {
+  text-decoration: underline;
+}
