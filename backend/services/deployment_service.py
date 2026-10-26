@@ -177,22 +177,32 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
         # afin de pouvoir les lire PENDANT `npm run build` (elles ne seront
         # plus lisibles une fois le site figé en fichiers statiques servis
         # par nginx, contrairement à un vrai backend qui les lit au runtime).
-        env_vars = {v.key: decrypt_value(v.value_encrypted) for v in project.env_vars}
-        env_var_keys = list(env_vars.keys())
+        env_var_objs = list(project.env_vars)
+        env_vars = {v.key: decrypt_value(v.value_encrypted) for v in env_var_objs}
+
+        # Protection réelle, pas juste documentée : une variable marquée
+        # "secret" est EXCLUE des build-args pour un frontend statique
+        # généré. Sa valeur finirait de toute façon visible en clair dans le
+        # JS envoyé au navigateur une fois le site buildé — la bakera au
+        # build serait une fausse sécurité. Seules les variables
+        # explicitement NON secrètes (destinées à être publiques, ex: une
+        # URL d'API) sont éligibles à cette injection build-time.
+        public_env_vars = {v.key: decrypt_value(v.value_encrypted) for v in env_var_objs if not v.is_secret}
+        public_env_var_keys = list(public_env_vars.keys())
 
         if project.build_config and project.build_config.get("strategy") not in (None, BuildStrategy.UNDETECTED.value):
             build_config = project.build_config
             if build_config["strategy"] in (BuildStrategy.GENERATED_NODE.value, BuildStrategy.GENERATED_PYTHON.value, BuildStrategy.GENERATED_PHP.value):
                 build_strategy_service.regenerate_dockerfile(repo_path, build_config)
             elif build_config["strategy"] == BuildStrategy.GENERATED_NODE_STATIC.value:
-                build_strategy_service.regenerate_node_static_dockerfile(repo_path, build_config, env_var_keys=env_var_keys)
+                build_strategy_service.regenerate_node_static_dockerfile(repo_path, build_config, env_var_keys=public_env_var_keys)
             elif build_config["strategy"] == BuildStrategy.GENERATED_STATIC.value:
                 build_strategy_service.write_static_dockerfile(repo_path)
             elif build_config["strategy"] == BuildStrategy.MANUAL.value:
                 build_strategy_service.regenerate_manual_dockerfile(repo_path, build_config)
         else:
             realtime_service.publish_deployment_event(deployment.id, "analyzing", "Détection du type de projet...")
-            build_config = build_strategy_service.determine_strategy(repo_path, env_var_keys=env_var_keys)
+            build_config = build_strategy_service.determine_strategy(repo_path, env_var_keys=public_env_var_keys)
             project.build_config = build_config
             project_repository.save(db, project)
 
@@ -220,6 +230,14 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
             def _on_log(line: str):
                 realtime_service.publish_deployment_event(deployment.id, "log", line)
 
+            # Même logique de protection appliquée ici : les build-args
+            # transmis à Docker n'incluent les secrets que si la stratégie
+            # n'est PAS un frontend statique (là où on sait que le résultat
+            # est intégralement public). Pour un Dockerfile personnalisé ou
+            # un backend, un vrai secret de build (ex: token de registre
+            # privé) reste légitime et n'est pas filtré.
+            build_args = public_env_vars if build_config["strategy"] == BuildStrategy.GENERATED_NODE_STATIC.value else env_vars
+
             _, build_logs, port_mappings = docker_service.build_and_run(
                 client,
                 repo_path=repo_path,
@@ -228,7 +246,7 @@ def deploy_project(db: Session, project: Project, deployment: Deployment) -> Dep
                 env_vars=env_vars,
                 dockerfile=dockerfile_name,
                 on_log=_on_log,
-                build_args=env_vars,
+                build_args=build_args,
             )
             preview_urls = _build_preview_urls(project.server, port_mappings)
 

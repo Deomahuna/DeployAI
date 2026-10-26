@@ -2,7 +2,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from schemas.user import (
-    UserCreate, UserLogin, UserOut, Token,
+    UserCreate, UserLogin,  UserOut, Token,
     OtpVerify, OtpResend, ForgotPasswordRequest, ResetPasswordRequest,
 )
 from services import auth_service

@@ -93,6 +93,22 @@ def _fallback_diagnostic(error_message: str) -> dict:
             "confidence": 0.5,
             "solutions": [{"title": "Vérifier l'URL du dépôt et que l'intégration GitHub/GitLab a bien accès au dépôt", "command": None}],
         }
+    if "impossible de détecter le type de projet" in msg:
+        return {
+            "cause": (
+                "Aucun fichier reconnu à la racine du dépôt (docker-compose.yml, Dockerfile, "
+                "package.json, requirements.txt, composer.json ou index.html). Cause fréquente : "
+                "le code est en réalité dans un sous-dossier (ex: un zip extrait avec un dossier "
+                "imbriqué en double), ou le projet utilise un langage non encore pris en charge "
+                "par la détection automatique."
+            ),
+            "severity": "medium",
+            "confidence": 0.7,
+            "solutions": [
+                {"title": "Vérifier sur GitHub que les fichiers du projet sont bien directement à la racine du dépôt (pas dans un sous-dossier imbriqué)", "command": None},
+                {"title": "Sinon, configurer manuellement le build depuis Paramètres > Configuration du projet", "command": None},
+            ],
+        }
 
     return {
         "cause": "Impossible d'analyser automatiquement l'erreur (diagnostic IA indisponible). Consulte les logs complets.",
